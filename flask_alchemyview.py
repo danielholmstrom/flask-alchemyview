@@ -47,8 +47,10 @@ Simple example::
     class SimpleModelView(AlchemyView):
         model = SimpleModel
         schema = SimpleModelSchema
-        session = None
+        session = myapp.db
 
+
+The session needs to be set on the view if it's not set on the model.
 """
 from __future__ import absolute_import, division
 
