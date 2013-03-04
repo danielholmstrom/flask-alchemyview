@@ -1,0 +1,10 @@
+*.pyc
+*.egg
+*.mo
+*.egg-info
+.coverage
+docs/build
+build
+\#*#
+dist
+.ropeproject
