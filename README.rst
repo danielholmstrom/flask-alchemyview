@@ -162,3 +162,4 @@ Simple example::
     SimpleModelView.register(app)
 
 
+More documentation can be found on `pypi <http://pythonhosted.org/Flask-AlchemyView/flask_alchemyview.html>`_.
