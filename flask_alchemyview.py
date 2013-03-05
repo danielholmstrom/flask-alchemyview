@@ -1,29 +1,142 @@
 # vim: set fileencoding=utf-8 :
 """
 
+*****************
 Flask-AlchemyView
-~~~~~~~~~~~~~~~~~
+*****************
 
-A Flask ModelView that handles SQLAlchemy Declarative models. It assumes JSON
-requests and returns JSON responses.
+A Flask AlchemyView that makes it a bit easier to manage views for
+SQLAlchemy Declarative models. The :class:`flask_alchemyview.AlchemyView` class
+extends the very nice `Flask-Classy <https://github.com/apiguy/flask-classy>`_
+FlaskView and supports all Flask-Classy FlaskView functionality.
 
+What does it do?
+================
 
-Data validation
----------------
+The AlchemyView handles GET/POST/PUT/DELETE and listing items for a specific
+SQLAlchemy declarative model. Currenctly it assumes JSON requests and returns
+JSON responses, but extending it to support HTML generation should not be a
+problem, it's just not very interesting for me to do that.
 
-Data validation is done with `colander
-<http://docs.pylonsproject.org/projects/colander/en/latest/>`_ schemas.
+*NOTE!!!* The AlchemyView only supports models with single preimary keys,
+composite keys are currently not supported because I cannot descide how to
+handle them in the URL.
 
+The session
+===========
 
-JSON
-----
+A AlchemyView uses either :attr:`flask_alchemyview.AlchemyView.session` or, if
+that is not set, :attr:`flask_alchemyview.AlchemyView.model`.session. If
+neither is set the view will start throwing exceptions, just remember to set
+one of them.
+
+Dictalchemy
+===========
 
 Model instances are serialized to and from dicts using `dictalchemy
 <http://pythonhosted.org/dictalchemy/>`_. When new instances are created the
 unserialized JSON will be passed to their constructor.
 
+Colander
+========
+
+Input data validation is done with `colander
+<http://docs.pylonsproject.org/projects/colander/en/latest/>`_ schemas.
+
+GET an item
+===========
+
+In case of a GET item request the view will check if the actual item exists.
+If it does the AlchemyView will return that object in JSON form. What the view
+does return is determined by either the models dictalchemy settings or settings
+in the AlchemyView. The attributes
+:attr:`flask_alchemy.AlchemyView.dict_params` and
+:attr:`flask_alchemy.AlchemyView.asdict_params` will override the models
+default behaviour. The query used to fetch the object is created in
+:meth:`flask_alchemyview.AlchemyView._base_query`. That query is always used
+for fetching items, so if you want to add joins or other stuff that is the
+method that you should override.
+
+See also
+--------
+
+    * :func:`flask_alchemyview.AlchemyView.asdict_params`
+    * :func:`flask_alchemyview.AlchemyView.dict_params`
+
+PUT an item
+===========
+
+Updating an item is pretty basic. If the item exists it will be updated with
+the data returned by the update schema. The update schema is either
+:attr:flask_alchemy.AlchemyView.update_schema` or
+:attr:flask_alchemyview.AlchemyView.schema` if `update_schema` isn't set. If
+any SchemaNode in the schema returns colander.null it will be removed from the
+update data, None will be preserved. This behaviour cannot be modified at the
+moment.
+
+Updating the item will be done by calling `model.fromdict`. The parameters will
+be :attr:`flask_alchemy.AlchemyView.fromdict_params`, or
+:attr:`flask_alchemy.AlchemyView.dict_params` if `fromdict_params` isn't set.
+
+On validation error a 400 will be returned, on other errors a 500 will be
+returned.
+
+Out of the box a AlchemyView is a bit limited in it's update/create
+functionality. This is by design, if creating/updating a model is more complex
+it's best to not try to do it automagically.
+
+See also
+--------
+
+    * :func:`flask_alchemyview.AlchemyView.fromdict_params`
+    * :func:`flask_alchemyview.AlchemyView.dict_params`
+    * :func:`flask_alchemyview.AlchemyView.update_schema`
+
+
+POST a new item
+===============
+
+When post:ing data the data will be validated by the
+:attr:flask_alchemy.AlchemyView.create_schema` or
+:attr:flask_alchemyview.AlchemyView.schema` if `create_schema` isn't set.
+Colander null values will not be removed. The validated data will be sent to
+the model constructor. On validation error an error message will be returned,
+on other errors a 500 will be returned.
+
+See also
+--------
+    * :func:`flask_alchemyview.AlchemyView.create_schema`
+
+
+DELETE an item
+==============
+
+A delete will simply delete the instance if it exists. The delete method is
+defined as :meth:`flask_alchemyview.AlchemyView.delete` and
+:meth:`flask_alchemyview.AlchemyView._delete`.
+
+
+Listing items
+=============
+
+Listing items is done by GET:ing /ROUTE_BASE/. It takes the arguments 'limit',
+'offset', 'sortby' and 'direction'. `sortby` is mapped to
+:flask_alchemyview.AlchemyView.sortby_map`. Limit, offset and direction works
+like usual. There are defaults values for these and a
+:attr:`flask_alchemyview.AlchemyView.max_page_limit` attribute.which limits the
+limit.
+
+See also
+--------
+
+    * :attr:`flask_alchemyview.AlchemyView.sortby`
+    * :attr:`flask_alchemyview.AlchemyView.sortby_map`
+    * :attr:`flask_alchemyview.AlchemyView.sort_direction`
+    * :attr:`flask_alchemyview.AlchemyView.page_limit`
+    * :attr:`flask_alchemyview.AlchemyView.max_page_limit`
+
 Usage
------
+=====
 
 Simple example::
 
@@ -49,8 +162,9 @@ Simple example::
         schema = SimpleModelSchema
         session = myapp.db
 
+    SimpleModelView.register(app)
 
-The session needs to be set on the view if it's not set on the model.
+
 """
 from __future__ import absolute_import, division
 
@@ -359,7 +473,7 @@ class AlchemyView(FlaskView):
 
         This method will create a model with request data if the data was
         valid. It validates the data with
-        :meth:`flask_alchemymodel.AlchemyView._get_create_schema`.
+        :meth:`flask_alchemyview.AlchemyView._get_create_schema`.
 
         If everything was successfull it will return a 303 redirect to the
         newly created item.
