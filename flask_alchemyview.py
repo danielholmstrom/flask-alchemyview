@@ -84,6 +84,7 @@ except ImportError:
 _logger = logging.getLogger('flask.ext.alchemyview')
 """Our logger"""
 
+
 def _remove_colander_null(result):
     """Removes colaner.null values from a dict or list
 
@@ -270,7 +271,6 @@ class AlchemyView(FlaskView):
                             "composite primary key")
         primary_key = [(column.name, column.type.python_type)
                        for column in self.model.__table__.primary_key]
-        primary_key_type = primary_key[0][1]
         primary_key_name = primary_key[0][0]
         return url_for(self.build_route_name('get'),
                        id=getattr(item, primary_key_name))
@@ -372,15 +372,22 @@ class AlchemyView(FlaskView):
         try:
             result = _remove_colander_null(self._get_create_schema(
                 request.json).deserialize(request.json))
-            item = self.model(**result)
-            # TODO: Fix this shitty commit/rollback code
-            session.add(item)
-            session.commit()
         except Exception, e:
             session.rollback()
             return self._json_response(e, 400)
         else:
-            return redirect(self._item_url(item), 303)
+            try:
+                item = self.model(**result)
+                session.add(item)
+            except Exception, e:
+                session.rollback()
+                return self._json_response(e, 500)
+            else:
+                try:
+                    session.commit()
+                except:
+                    return self._json_response(e, 500)
+                return redirect(self._item_url(item), 303)
 
     def put(self, id):
         item = self._get_item(id)

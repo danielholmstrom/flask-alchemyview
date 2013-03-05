@@ -70,26 +70,29 @@ class TestSimpleModel(unittest.TestCase):
     def json_get(self, url, follow_redirects=False):
         """GET json data"""
         return self.client.get(url,
-                content_type='application/json',
-                follow_redirects=follow_redirects)
+                               content_type='application/json',
+                               follow_redirects=follow_redirects)
 
     def json_post(self, url, data, follow_redirects=False):
         """Post json data"""
-        return self.client.post(url, data=json.dumps(data),
-                content_type='application/json',
-                follow_redirects=follow_redirects)
+        return self.client.post(url,
+                                data=json.dumps(data),
+                                content_type='application/json',
+                                follow_redirects=follow_redirects)
 
     def json_put(self, url, data, follow_redirects=False):
         """Put json data"""
-        return self.client.put(url, data=json.dumps(data),
-                content_type='application/json',
-                follow_redirects=follow_redirects)
+        return self.client.put(url,
+                               data=json.dumps(data),
+                               content_type='application/json',
+                               follow_redirects=follow_redirects)
 
     def json_delete(self, url, data=None, follow_redirects=False):
         """Delete request"""
-        return self.client.delete(url, data=json.dumps(data),
-                content_type='application/json',
-                follow_redirects=follow_redirects)
+        return self.client.delete(url,
+                                  data=json.dumps(data),
+                                  content_type='application/json',
+                                  follow_redirects=follow_redirects)
 
     def assert_redirects(self, request, location, status_code=None):
         """Assert that a request redirects"""
@@ -124,7 +127,8 @@ class TestSimpleModel(unittest.TestCase):
         assert response.status_code == 404
 
     def test_get_invalid_id(self):
-        response = self.json_get(url_for('SimpleModelView:get', id=u'a string'))
+        response = self.json_get(url_for('SimpleModelView:get',
+                                         id=u'a string'))
         assert response.status_code == 404
 
     def test_post(self):
