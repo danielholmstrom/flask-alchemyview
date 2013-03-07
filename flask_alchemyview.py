@@ -18,7 +18,7 @@ SQLAlchemy declarative model. Currenctly it assumes JSON requests and returns
 JSON responses, but extending it to support HTML generation should not be a
 problem, it's just not very interesting for me to do that.
 
-*NOTE!!!* The AlchemyView only supports models with single primary keys,
+**NOTE!!!** The AlchemyView only supports models with single primary keys,
 composite keys are currently not supported because I cannot descide how to
 handle them in the URL.
 
@@ -50,8 +50,8 @@ In case of a GET item request the view will check if the actual item exists.
 If it does the AlchemyView will return that object in JSON form. What the view
 does return is determined by either the models dictalchemy settings or settings
 in the AlchemyView. The attributes
-:attr:`flask_alchemy.AlchemyView.dict_params` and
-:attr:`flask_alchemy.AlchemyView.asdict_params` will override the models
+:attr:`flask_alchemyview.AlchemyView.dict_params` and
+:attr:`flask_alchemyview.AlchemyView.asdict_params` will override the models
 default behaviour. The query used to fetch the object is created in
 :meth:`flask_alchemyview.AlchemyView._base_query`. That query is always used
 for fetching items, so if you want to add joins or other stuff that is the
@@ -68,15 +68,16 @@ PUT an item
 
 Updating an item is pretty basic. If the item exists it will be updated with
 the data returned by the update schema. The update schema is either
-:attr:flask_alchemy.AlchemyView.update_schema` or
-:attr:flask_alchemyview.AlchemyView.schema` if `update_schema` isn't set. If
+:attr:`flask_alchemyview.AlchemyView.update_schema` or
+:attr:`flask_alchemyview.AlchemyView.schema` if `update_schema` isn't set. If
 any SchemaNode in the schema returns colander.null it will be removed from the
 update data, None will be preserved. This behaviour cannot be modified at the
 moment.
 
 Updating the item will be done by calling `model.fromdict`. The parameters will
-be :attr:`flask_alchemy.AlchemyView.fromdict_params`, or
-:attr:`flask_alchemy.AlchemyView.dict_params` if `fromdict_params` isn't set.
+be :attr:`flask_alchemyview.AlchemyView.fromdict_params`, or
+:attr:`flask_alchemyview.AlchemyView.dict_params` if `fromdict_params` isn't
+set.
 
 On validation error a 400 will be returned, on other errors a 500 will be
 returned.
@@ -97,7 +98,7 @@ POST a new item
 ===============
 
 When post:ing data the data will be validated by the
-:attr:flask_alchemy.AlchemyView.create_schema` or
+:attr:flask_alchemyview.AlchemyView.create_schema` or
 :attr:flask_alchemyview.AlchemyView.schema` if `create_schema` isn't set.
 Colander null values will not be removed. The validated data will be sent to
 the model constructor. On validation error an error message will be returned,
@@ -228,10 +229,11 @@ def _remove_colander_null(result):
 def _exception_to_dict(error):
     """Get a dict from an Exception
 
-    :param error: An Exception.\
-            Currently the following exceptions are supported:
-            * :class:`sqlalchemy.exc.IntegrityError`
-            * :class:`colander.Invalid`
+    Currently the following exceptions are supported:
+        * :class:`sqlalchemy.exc.IntegrityError`
+        * :class:`colander.Invalid`
+
+    :param error: An Exception
 
     :returns: Dict with errors. Contains 'message' and 'errors', \
             where 'errors' is a dict containing {'key': unicode message}
@@ -335,7 +337,6 @@ class AlchemyView(FlaskView):
         :param obj: Object that should be dumped
 
         :returns: JSON string
-        :rtype str:
         """
         kwargs['ensure_ascii'] = ensure_ascii
         kwargs['cls'] = self.JSONEncoder
@@ -369,7 +370,7 @@ class AlchemyView(FlaskView):
         """Get the base query that should be used
 
         For example add joins here. Default implementation returns
-        self.model.query.
+        `self._get_session().query(self.model)`.
 
         :returns: Sqlalchemy query
         """
@@ -505,6 +506,7 @@ class AlchemyView(FlaskView):
                 return redirect(self._item_url(item), 303)
 
     def put(self, id):
+        """Handles PUT"""
         item = self._get_item(id)
         session = self._get_session()
         try:
@@ -521,6 +523,7 @@ class AlchemyView(FlaskView):
         return redirect(self._item_url(item), 303)
 
     def _delete(self, id):
+        """Delete an item"""
         item = self._get_item(id)
         session = self._get_session()
         session.delete(item)
@@ -532,6 +535,10 @@ class AlchemyView(FlaskView):
         return self._json_response({})
 
     delete = _delete
+    """Delete an item
+
+    This is just an alias for :meth:`flask_alchemyview.AlchemyView._delete`.
+    """
 
     def index(self):
         """Returns a list
@@ -589,8 +596,8 @@ class AlchemyView(FlaskView):
 
         return self._json_response({
             'items': [p.asdict(**(getattr(self,
-                                         'asdict_params',
-                                         self.dict_params or None) or {}))
+                                          'asdict_params',
+                                          self.dict_params or None) or {}))
                       for p in
                       query.limit(limit).offset(offset).all()],
             'count': query.count(),

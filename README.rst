@@ -15,7 +15,7 @@ SQLAlchemy declarative model. Currenctly it assumes JSON requests and returns
 JSON responses, but extending it to support HTML generation should not be a
 problem, it's just not very interesting for me to do that.
 
-*NOTE!!!* The AlchemyView only supports models with single preimary keys,
+*NOTE!!!* The AlchemyView only supports models with single primary keys,
 composite keys are currently not supported because I cannot descide how to
 handle them in the URL.
 
