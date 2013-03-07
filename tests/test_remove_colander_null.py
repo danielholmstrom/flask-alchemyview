@@ -15,4 +15,4 @@ def test_remove_colander_null_doesnt_remove_string():
 
 def test_remove_colander_null_works_recursively():
     assert _remove_colander_null(
-        {'a': { 'a': 1, 'b': c.null}}) == {'a': {'a': 1}}
+        {'a': {'a': 1, 'b': c.null}}) == {'a': {'a': 1}}
