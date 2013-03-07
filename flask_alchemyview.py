@@ -18,7 +18,7 @@ SQLAlchemy declarative model. Currenctly it assumes JSON requests and returns
 JSON responses, but extending it to support HTML generation should not be a
 problem, it's just not very interesting for me to do that.
 
-*NOTE!!!* The AlchemyView only supports models with single preimary keys,
+*NOTE!!!* The AlchemyView only supports models with single primary keys,
 composite keys are currently not supported because I cannot descide how to
 handle them in the URL.
 
@@ -305,10 +305,10 @@ class AlchemyView(FlaskView):
     """Will be used instead of asdict_params and fromdict_params if they're not
     set"""
 
-    # asdict_params = None
+    asdict_params = None
     """Parameters that will be used when getting an item"""
 
-    # fromdict_params = None
+    fromdict_params = None
     """Parameters that will be used when updating an item"""
 
     max_page_limit = 50
@@ -465,8 +465,9 @@ class AlchemyView(FlaskView):
     def get(self, id):
         """Handles GET requests"""
         return self._json_response(self._get_item(id).
-                                   asdict(**getattr(self, 'asdict_params',
-                                                    self.dict_params or {})))
+                                   asdict(**(getattr(self, 'asdict_params',
+                                                     self.dict_params or None)
+                                             or {})))
 
     def post(self):
         """Handles POST
@@ -510,8 +511,8 @@ class AlchemyView(FlaskView):
             result = _remove_colander_null(self._get_update_schema(
                 request.json).deserialize(request.json))
             item.fromdict(result,
-                          **getattr(self, 'fromdict_params',
-                                    self.dict_params or {}))
+                          **(getattr(self, 'fromdict_params',
+                                     self.dict_params or None) or {}))
             session.add(item)
             session.commit()
         except Exception, e:
@@ -587,9 +588,10 @@ class AlchemyView(FlaskView):
                                                        sortby), direction)())
 
         return self._json_response({
-            'items': [p.asdict(**getattr(self,
+            'items': [p.asdict(**(getattr(self,
                                          'asdict_params',
-                                         self.dict_params or {})) for p in
+                                         self.dict_params or None) or {}))
+                      for p in
                       query.limit(limit).offset(offset).all()],
             'count': query.count(),
             'limit': limit,
