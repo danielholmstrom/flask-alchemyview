@@ -251,6 +251,7 @@ def _exception_to_dict(error):
                   'Got unhandled error: %r:%s\nTraceback: %s' %
                   (error, str(error),
                    traceback.format_exc()))
+    # TODO: Remove this
     print error, str(error), traceback.format_exc()
     return {u'message': _(u'Unknown error'), u'errors': {}}
 
@@ -320,7 +321,14 @@ class AlchemyView(FlaskView):
     """Default page limit"""
 
     sortby = None
-    """Default sortby column"""
+    """Default sortby column
+
+    If not set no sortby will be applied by default in
+    :func:`flask_alchemyview.AlchemyView.index`.
+
+    In order for sortby to have any effect it also needs to be set in
+    :var:`flask_alchemyview.AlchemyView.sortby_map`
+    """
 
     sort_direction = 'asc'
     """Default sort direction"""
@@ -553,7 +561,6 @@ class AlchemyView(FlaskView):
         }
         """
         try:
-            # TODO: Check with a max value
             limit = min(int(request.args.get('limit', self.page_limit)),
                         self.max_page_limit)
         except:
@@ -566,7 +573,9 @@ class AlchemyView(FlaskView):
             return self._json_response({u'message': _(u'Invalid offset')},
                                        400)
         try:
-            sortby = str(request.args.get('sortby', self.sortby))
+            sortby = request.args.get('sortby', None)
+            if sortby:
+                sortby = str(sortby)
         except:
             return self._json_response({u'message': _(u'Invalid sortby')},
                                        400)
@@ -583,16 +592,9 @@ class AlchemyView(FlaskView):
         query = self._base_query()
 
         # Add sortby
-        if self.sortby_map and sortby in self.sortby_map:
+        if sortby and self.sortby_map and sortby in self.sortby_map:
             query = query.order_by(getattr(self.sortby_map[sortby],
                                            direction)())
-        else:
-            if not hasattr(self.model, sortby):
-                return self._json_response({u'message': _(u'Invalid sortby')},
-                                           400)
-            else:
-                query = query.order_by(getattr(getattr(self.model,
-                                                       sortby), direction)())
 
         return self._json_response({
             'items': [p.asdict(**(getattr(self,

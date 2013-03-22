@@ -48,6 +48,7 @@ class SimpleModelView(AlchemyView):
     model = SimpleModel
     schema = SimpleModelSchema
     session = None
+    max_page_limit = 20
 
 
 class TestSimpleModel(unittest.TestCase):
@@ -60,6 +61,7 @@ class TestSimpleModel(unittest.TestCase):
         self.app = Flask('test_view')
         SimpleModelView.register(self.app)
         SimpleModelView.session = self.session
+        self.session.query(SimpleModel).delete()
         self.ctx = self.app.test_request_context()
         self.ctx.push()
         self.client = self.app.test_client()
@@ -179,6 +181,36 @@ class TestSimpleModel(unittest.TestCase):
         model_id = m.id
         response = self.json_delete(url_for('SimpleModelView:put',
                                             id=model_id))
-        response.status_code == 200
+        assert response.status_code == 200
         m = self.session.query(SimpleModel).get(model_id)
         assert not m
+
+    def get_with_limit(self, limit):
+        for i in range(100):
+            m = SimpleModel(u'name %d' % i)
+            self.session.add(m)
+            self.session.flush()
+        return self.json_get(url_for('SimpleModelView:index', limit=limit))
+
+    def test_list_limit(self):
+        response = self.get_with_limit(5)
+        assert response.status_code == 200
+        assert len(json.loads(response.data)['items']) == 5
+
+    def test_list_limit_greater_than_max(self):
+        response = self.get_with_limit(1000)
+        assert response.status_code == 200
+        assert len(json.loads(response.data)['items']) == 20
+
+    def test_offset(self):
+        self.session.query(SimpleModel).delete()
+        for i in range(20):
+            m = SimpleModel(u'name %d' % i)
+            m.id = i + 1
+            self.session.add(m)
+            self.session.flush()
+        response = self.json_get(url_for('SimpleModelView:index',
+                                         sortby='id',
+                                         offset=10))
+        assert response.status_code == 200
+        assert json.loads(response.data)['items'][0]['id'] == 11
