@@ -116,3 +116,8 @@ If `sortby` isn't set the `sortby` attribute will be used. It that is set to Non
 sortby_map Example::
 
     sortby_map = {'name': User.name, 'group_id': 'Group.id'}
+
+License
+=======
+
+dictalchemy is released under the MIT license.
