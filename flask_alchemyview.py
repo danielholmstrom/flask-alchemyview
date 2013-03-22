@@ -120,8 +120,8 @@ defined as :meth:`flask_alchemyview.AlchemyView.delete` and
 Listing items
 =============
 
-Listing items is done by GET:ing /ROUTE_BASE/. It takes the arguments 'limit',
-'offset', 'sortby' and 'direction'. `sortby` is mapped to
+Listing items is done by GET:ing /ROUTE_BASE/. It takes the arguments `limit`,
+`offset`, `sortby` and `direction`. `sortby` is mapped to
 :flask_alchemyview.AlchemyView.sortby_map`. Limit, offset and direction works
 like usual. There are defaults values for these and a
 :attr:`flask_alchemyview.AlchemyView.max_page_limit` attribute.which limits the
@@ -303,14 +303,21 @@ class AlchemyView(FlaskView):
     """Create schema"""
 
     dict_params = None
-    """Will be used instead of asdict_params and fromdict_params if they're not
-    set"""
+    """Will be used instead of
+    :var:`flask_alchemyview.AlchemyView.asdict_params` and
+    :var:`flask_alchemyview.AlchemyView.from_params` if they're not set"""
 
     asdict_params = None
-    """Parameters that will be used when getting an item"""
+    """Parameters that will be used when getting an item
+
+    The parameters will be used in :meth:`dictalchemy.utils.asdict`.
+    """
 
     fromdict_params = None
-    """Parameters that will be used when updating an item"""
+    """Parameters that will be used when updating an item
+
+    The parameters will be used in :meth:`dictalchemy.utils.fromdict`.
+    """
 
     max_page_limit = 50
     """Max page limit"""
@@ -332,7 +339,13 @@ class AlchemyView(FlaskView):
     """Default sort direction"""
 
     sortby_map = None
-    """Map of string=>column for sortby"""
+    """Map of string=>column for sortby
+
+    The values can be anything that will work together with the query returned
+    by :meth:`flask_alchemyview.AlchemyView._base_query`. So if there is a join
+    in the base query that column, or name of that colum can be mapped to a key
+    in the sortby_map.
+    """
 
     def _json_dumps(self, obj, ensure_ascii=False, **kwargs):
         """Load object from json string
