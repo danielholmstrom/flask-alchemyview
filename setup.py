@@ -27,7 +27,7 @@ test_requires = install_requires + [
 ]
 
 setup(name='Flask-AlchemyView',
-      version='0.1a1',
+      version='0.1',
       description="Simple ModelView for auto-generating Flask Views based on "
       "SQLAlchemy models",
       long_description=__doc__,
@@ -36,7 +36,7 @@ setup(name='Flask-AlchemyView',
       author='Daniel Holmstrom',
       author_email='holmstrom.daniel@gmail.com',
       platforms='any',
-      classifiers=['Development Status :: 3 - Alpha',
+      classifiers=['Development Status :: 5 - Production/Stable'
                    'License :: OSI Approved :: MIT License',
                    'Environment :: Web Environment',
                    'Intended Audience :: Developers',
