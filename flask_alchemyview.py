@@ -251,8 +251,6 @@ def _exception_to_dict(error):
                   'Got unhandled error: %r:%s\nTraceback: %s' %
                   (error, str(error),
                    traceback.format_exc()))
-    # TODO: Remove this
-    print error, str(error), traceback.format_exc()
     return {u'message': _(u'Unknown error'), u'errors': {}}
 
 
