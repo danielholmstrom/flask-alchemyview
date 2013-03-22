@@ -1,165 +1,114 @@
-*****************
-Flask-AlchemyView
-*****************
+#####
+Intro
+#####
 
-A Flask AlchemyView that makes it a bit easier to manage views for
+A Flask ModelView that makes it a bit easier to manage views for
 SQLAlchemy Declarative models. The `flask_alchemyview.AlchemyView` class
 extends the very nice `Flask-Classy <https://github.com/apiguy/flask-classy>`_
 FlaskView and supports all Flask-Classy FlaskView functionality.
 
-What does it do?
-================
+Using Flask-SQLAlchemy
+======================
 
-The AlchemyView handles GET/POST/PUT/DELETE and listing items for a specific
-SQLAlchemy declarative model. Currenctly it assumes JSON requests and returns
-JSON responses, but extending it to support HTML generation should not be a
-problem, it's just not very interesting for me to do that.
+In order to use Flask-SQLAlchemy some setup is needed. First of all we want the Model to be dictable. The AlchemyViews should also have session set.
 
-*NOTE!!!* The AlchemyView only supports models with single primary keys,
-composite keys are currently not supported because I cannot descide how to
-handle them in the URL.
+Setup Flask-SQLAlchemy::
 
-The session
-===========
+    ...
+    from flask import Flask
+    app = Flask(__name__)
 
-A AlchemyView uses either `flask_alchemyview.AlchemyView.session` or, if
-that is not set, `flask_alchemyview.AlchemyView.model`.session. If
-neither is set the view will start throwing exceptions, just remember to set
-one of them.
+    from flask.ext.sqlalchemy import SQLAlchemy
 
-Dictalchemy
-===========
+    db = SQLAlchemy(app)
 
-Model instances are serialized to and from dicts using `dictalchemy
-<http://pythonhosted.org/dictalchemy/>`_. When new instances are created the
-unserialized JSON will be passed to their constructor.
+    from dictalchemy import make_class_dictable
+    make_class_dictable(db.Model)
 
-Colander
-========
-
-Input data validation is done with `colander
-<http://docs.pylonsproject.org/projects/colander/en/latest/>`_ schemas.
-
-GET an item
-===========
-
-In case of a GET item request the view will check if the actual item exists.
-If it does the AlchemyView will return that object in JSON form. What the view
-does return is determined by either the models dictalchemy settings or settings
-in the AlchemyView. The attributes
-`flask_alchemy.AlchemyView.dict_params` and
-`flask_alchemy.AlchemyView.asdict_params` will override the models
-default behaviour. The query used to fetch the object is created in
-`flask_alchemyview.AlchemyView._base_query`. That query is always used
-for fetching items, so if you want to add joins or other stuff that is the
-method that you should override.
-
-See also
---------
-
-    * `flask_alchemyview.AlchemyView.asdict_params`
-    * `flask_alchemyview.AlchemyView.dict_params`
-
-PUT an item
-===========
-
-Updating an item is pretty basic. If the item exists it will be updated with
-the data returned by the update schema. The update schema is either
-flask_alchemy.AlchemyView.update_schema` or
-flask_alchemyview.AlchemyView.schema` if `update_schema` isn't set. If
-any SchemaNode in the schema returns colander.null it will be removed from the
-update data, None will be preserved. This behaviour cannot be modified at the
-moment.
-
-Updating the item will be done by calling `model.fromdict`. The parameters will
-be `flask_alchemy.AlchemyView.fromdict_params`, or
-`flask_alchemy.AlchemyView.dict_params` if `fromdict_params` isn't set.
-
-On validation error a 400 will be returned, on other errors a 500 will be
-returned.
-
-Out of the box a AlchemyView is a bit limited in it's update/create
-functionality. This is by design, if creating/updating a model is more complex
-it's best to not try to do it automagically.
-
-See also
---------
-
-    * `flask_alchemyview.AlchemyView.fromdict_params`
-    * `flask_alchemyview.AlchemyView.dict_params`
-    * `flask_alchemyview.AlchemyView.update_schema`
+    from flask.ext.alchemyview import AlchemyView
+    AlchemyView.session = db.session
 
 
-POST a new item
-===============
+Using AlchemyView
+=================
 
-When post:ing data the data will be validated by the
-flask_alchemy.AlchemyView.create_schema` or
-flask_alchemyview.AlchemyView.schema` if `create_schema` isn't set.
-Colander null values will not be removed. The validated data will be sent to
-the model constructor. On validation error an error message will be returned,
-on other errors a 500 will be returned.
+Lets start with a simple model, a user::
 
-See also
---------
-    * `flask_alchemyview.AlchemyView.create_schema`
+    class User(Base):
+        id = Column(Integer, primary_key)
+        name = Column(Unicode)
+        email = Column(Unicode)
 
 
-DELETE an item
-==============
+The colander schema looks like this::
 
-A delete will simply delete the instance if it exists. The delete method is
-defined as `flask_alchemyview.AlchemyView.delete` and
-`flask_alchemyview.AlchemyView._delete`.
+    import colander as c
+
+    class UserSchema(c.MappingSchema):
+        name = c.SchemaNode(c.String())
+        email = c.SchemaNode(c.String())
+
+Using the AlchemyView::
+
+    class UserView(AlchemyView):
+        model = UserModel
+        schema = UserSchema
+
+    UserView.register(app)
+
+After this the following routes has been defined:
+
+    * GET /user/[ID]
+    * POST /user/
+    * PUT /user/[ID]
+    * DELETE /user/[ID]
+    * GET /user/
+
+So far so good, but that can easily be done without AlchemyView. So why use AlchemyView? Well, it's pretty configurable. There is support for different schemas depending on weather a PUT or POST is made, it can follow relationships on GET, and to some extent on PUT and POST also. It can take `limit`, `offset`, `sortby` and `direction` arguments when listing.
+
+Defining what GET should return
+-------------------------------
+
+What is returned by GET(individual item or a list) is defined by the parameters `dict_params` and `asdict_params`. If non of them is set asdict() will be called on the model without parameters.
+
+The method `AlchemyView._base_query()` can be overridden in order to add joins, exclude/include columns etc. The returned query is the one that will be used when performing a GET.
+
+Examples
+^^^^^^^^
+
+Returning only a specific attribute::
+
+    asdict_params = {'only': ['name']}
+
+Following a relationship::
+
+    asdict_params = {'follow': {'group':{}}}
+
+Adding a join to the query::
+
+    def _base_query(self):
+        return self.session.query(User).join(Group)
+
+
+Controlling POST and PUT
+------------------------
+
+POST and PUT will use `dict_params`, `fromdict_params` to create/update items.
+The schemas will be taken from `schema`, `create_schema` or `update_schema`.
+
+The `create_schema` is actually returned by the method `_get_create_schema()`, which will get all parameters as argument. By overriding `_get_create_schema()` it's possibly to handle situations where for example different types of a model requires different schemas. The same goes for `update_schema`.
 
 
 Listing items
-=============
+-------------
 
-Listing items is done by GET:ing /ROUTE_BASE/. It takes the arguments 'limit',
-'offset', 'sortby' and 'direction'. `sortby` is mapped to
-:flask_alchemyview.AlchemyView.sortby_map`. Limit, offset and direction works
-like usual. There are defaults values for these and a
-`flask_alchemyview.AlchemyView.max_page_limit` attribute.which limits the
-limit.
+The listing URL takes the additional parameters `limit`, `offset`, `sortby` and `direction`. The View has a `max_page_limit` attribute that ensures that `limit` can't be set to high.
 
-See also
---------
+Sorting a list
+^^^^^^^^^^^^^^
 
-    * `flask_alchemyview.AlchemyView.sortby`
-    * `flask_alchemyview.AlchemyView.sortby_map`
-    * `flask_alchemyview.AlchemyView.sort_direction`
-    * `flask_alchemyview.AlchemyView.page_limit`
-    * `flask_alchemyview.AlchemyView.max_page_limit`
+If `sortby` isn't set the `sortby` attribute will be used. It that is set to None no sorting will be done. The `sortby` argument is checked against `sortby_map` which is a map of `string`: `expression`. The expression must be something that can be inserted into the _base_query, so either a column or a valid string. If the `sortby` parameter is not found in `sortby_map` a 400 will be returned.
 
-Usage
-=====
+sortby_map Example::
 
-Simple example::
-
-    class SimpleModel(Base):
-
-        __tablename__ = 'simplemodel'
-
-        id = Column(Integer, primary_key=True)
-
-        name = Column(Unicode)
-
-        def __init__(self, name):
-            self.name = name
-
-
-    class SimpleModelSchema(c.MappingSchema):
-
-        name = c.SchemaNode(c.String())
-
-
-    class SimpleModelView(AlchemyView):
-        model = SimpleModel
-        schema = SimpleModelSchema
-        session = myapp.db
-
-    SimpleModelView.register(app)
-
-
-More documentation can be found on `pypi <http://pythonhosted.org/Flask-AlchemyView/flask_alchemyview.html>`_.
+    sortby_map = {'name': User.name, 'group_id': 'Group.id'}

@@ -1,17 +1,18 @@
 # vim: set fileencoding=utf-8 :
 """
 
-*****************
+#################
 Flask-AlchemyView
-*****************
+#################
 
 A Flask AlchemyView that makes it a bit easier to manage views for
 SQLAlchemy Declarative models. The :class:`flask_alchemyview.AlchemyView` class
 extends the very nice `Flask-Classy <https://github.com/apiguy/flask-classy>`_
 FlaskView and supports all Flask-Classy FlaskView functionality.
 
+****************
 What does it do?
-================
+****************
 
 The AlchemyView handles GET/POST/PUT/DELETE and listing items for a specific
 SQLAlchemy declarative model. Currenctly it assumes JSON requests and returns
@@ -285,9 +286,10 @@ class AlchemyView(FlaskView):
     """The JSON Encoder that should be used to load/dump json"""
 
     session = None
-    """The SQLAlchemy session. If not set self.model.session will be used(for
-    those who uses Flask-SQLAlchemy. If that is not set the view will not
-    work."""
+    """The SQLAlchemy session
+
+    If not set self.model.session will be used, if that is not set the view
+    will not work."""
 
     model = None
     """SQLAlchemy declarative model"""
@@ -304,8 +306,8 @@ class AlchemyView(FlaskView):
 
     dict_params = None
     """Will be used instead of
-    :var:`flask_alchemyview.AlchemyView.asdict_params` and
-    :var:`flask_alchemyview.AlchemyView.from_params` if they're not set"""
+    :attr:`flask_alchemyview.AlchemyView.asdict_params` and
+    :attr:`flask_alchemyview.AlchemyView.from_params` if they're not set"""
 
     asdict_params = None
     """Parameters that will be used when getting an item
@@ -332,7 +334,7 @@ class AlchemyView(FlaskView):
     :func:`flask_alchemyview.AlchemyView.index`.
 
     In order for sortby to have any effect it also needs to be set in
-    :var:`flask_alchemyview.AlchemyView.sortby_map`
+    :attr:`flask_alchemyview.AlchemyView.sortby_map`
     """
 
     sort_direction = 'asc'
@@ -496,7 +498,7 @@ class AlchemyView(FlaskView):
         valid. It validates the data with
         :meth:`flask_alchemyview.AlchemyView._get_create_schema`.
 
-        If everything was successfull it will return a 303 redirect to the
+        If everything was successful it will return a 303 redirect to the
         newly created item.
 
         :returns: A response
@@ -562,14 +564,13 @@ class AlchemyView(FlaskView):
     def index(self):
         """Returns a list
 
-        The response look like this:
+        The response look like this::
 
-        {
-            items:[...],
-            count: Integer,
-            limit: Integer,
+            items: [...]
+            count: Integer
+            limit: Integer
             offset: Integer
-        }
+
         """
         try:
             limit = min(int(request.args.get('limit', self.page_limit)),
