@@ -7,6 +7,10 @@ SQLAlchemy Declarative models. The `flask_alchemyview.AlchemyView` class
 extends the very nice `Flask-Classy <https://github.com/apiguy/flask-classy>`_
 FlaskView and supports all Flask-Classy FlaskView functionality.
 
+Flask-AlchemyView uses `colander <http://docs.pylonsproject.org/projects/colander/en/latest/>`_ for validation and `dictalchemy <http://pythonhosted.org/dictalchemy/>`_ for updating/creating/reading models.
+
+More documentation can be found at `pipy <http://pythonhosted.org/Flask-AlchemyView/>`_.
+
 Using Flask-SQLAlchemy
 ======================
 
