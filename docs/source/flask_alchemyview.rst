@@ -1,1 +1,0 @@
-.. automodule:: flask_alchemyview
