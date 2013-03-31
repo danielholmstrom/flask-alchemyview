@@ -18,12 +18,12 @@ install_requires = [
     'SQLAlchemy>=0.8.0',
     'Flask-Classy',
     'colander',
+    'dictalchemy',
     'sphinx'
 ]
 
 # Requirement for running tests
 test_requires = install_requires + [
-    'dictalchemy',
     'flask-sqlalchemy'
 ]
 
