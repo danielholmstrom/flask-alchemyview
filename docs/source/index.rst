@@ -14,7 +14,7 @@ The session
 -----------
 
 A AlchemyView uses either :attr:`AlchemyView.session` or, if
-that is not set, the session from Flask-SQLAlchemy. The prefered way to access the session is to use the Flask-SQLAlchemy session.
+that is not set, the session from Flask-SQLAlchemy(new since v0.1.3). The prefered way to access the session is to use the Flask-SQLAlchemy session.
 
 
 Using AlchemyView without Flask-SQLAlchemy
