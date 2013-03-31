@@ -22,8 +22,8 @@ install_requires = [
 
 # Requirement for running tests
 test_requires = install_requires + [
-    # 'unittest',
-    'dictalchemy'
+    'dictalchemy',
+    'flask-sqlalchemy'
 ]
 
 setup(name='Flask-AlchemyView',
