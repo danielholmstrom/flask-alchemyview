@@ -18,6 +18,7 @@ install_requires = [
     'SQLAlchemy>=0.8.0',
     'Flask-Classy',
     'colander',
+    'sphinx'
 ]
 
 # Requirement for running tests
