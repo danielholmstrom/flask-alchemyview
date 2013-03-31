@@ -14,15 +14,18 @@ The session
 -----------
 
 A AlchemyView uses either :attr:`AlchemyView.session` or, if
-that is not set, :attr:`AlchemyView.model`.session. If
-neither is set the view will start throwing exceptions, just remember to set
-one of them.
+that is not set, the session from Flask-SQLAlchemy. The prefered way to access the session is to use the Flask-SQLAlchemy session.
 
+
+Using AlchemyView without Flask-SQLAlchemy
+------------------------------------------
+
+This is not recommended but if Flask-SQLAlchemy is not used the session can be set on :class:`AlchemyView` directly. Be aware of that this will probably create problems if :class:`AlchemyView` is used by several applications.
 
 Using AlchemyView with Flask-SQLAlchemy
 ---------------------------------------
 
-In order to use Flask-SQLAlchemy some setup is needed. First of all we want the Model to be dictable. The AlchemyViews should also have session set.
+Nothing needs to be done in order to use Flask-SQLAlchemy. However, db.Model should be made dictable.
 
 Setup Flask-SQLAlchemy::
 
@@ -36,9 +39,6 @@ Setup Flask-SQLAlchemy::
 
     from dictalchemy import make_class_dictable
     make_class_dictable(db.Model)
-
-    from flask.ext.alchemyview import AlchemyView
-    AlchemyView.session = db.session
 
 
 Using AlchemyView

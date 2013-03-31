@@ -23,6 +23,7 @@ import colander
 from sqlalchemy.exc import IntegrityError
 from flask import Response, url_for, abort, request, redirect
 from flask.ext.classy import FlaskView
+from flask import current_app
 
 
 def _gettext(msg, *args, **kwargs):
@@ -131,8 +132,9 @@ class AlchemyView(FlaskView):
     session = None
     """The SQLAlchemy session
 
-    If not set self.model.session will be used, if that is not set the view
-    will not work."""
+    If not set the session will be taken from the Flask-SQLAlchemy extension.
+    If that is missing the view will not work.
+    """
 
     model = None
     """SQLAlchemy declarative model"""
@@ -292,11 +294,12 @@ class AlchemyView(FlaskView):
     def _get_session(self):
         """Get SQLAlchemy session
 
-        :raises: An exception if self.session and self.model.session isn't set
+        :raises: An exception if self.session isn't set and \
+                Flask-SQLAlchemy isn't used
 
         :returns: SQLAlchemy session
         """
-        return self.session or self.model.session
+        return self.session or current_app.extensions['sqlalchemy'].db.session
 
     def _get_schema(self, data):
         """Get basic colander schema

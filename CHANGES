@@ -1,0 +1,5 @@
+v0.1.3
+------
+
+* AlchemyView.model.session is no longer used
+* The session from Flask-SQLAlchemy will be used if AlchemyView.session isn't set. This is the prefered way of accessing the session.

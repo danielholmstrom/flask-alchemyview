@@ -43,7 +43,7 @@ SimpleModelView.register(app)
 class TestSimpleModel(unittest.TestCase):
 
     def setUp(self):
-        AlchemyView.session = db.session
+        AlchemyView.session = None # Reset this because of previous test
         self.ctx = app.test_request_context()
         self.ctx.push()
         self.client = app.test_client()
