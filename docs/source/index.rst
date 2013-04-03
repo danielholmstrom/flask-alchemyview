@@ -10,14 +10,11 @@ FlaskView and supports all Flask-Classy FlaskView functionality.
 
 Flask-AlchemyView uses `colander <http://docs.pylonsproject.org/projects/colander/en/latest/>`_ for validation and `dictalchemy <http://pythonhosted.org/dictalchemy/>`_ for updating/creating/reading models.
 
-.. note:: Currently :class:`AlchemyView` will always return json regardless of the HTTP Accept header.
-
 The session
 -----------
 
 A AlchemyView uses either :attr:`AlchemyView.session` or, if
 that is not set, the session from Flask-SQLAlchemy(new since v0.1.3). The prefered way to access the session is to use the Flask-SQLAlchemy session.
-
 
 Using AlchemyView without Flask-SQLAlchemy
 ------------------------------------------
@@ -41,6 +38,21 @@ Setup Flask-SQLAlchemy::
 
     from dictalchemy import make_class_dictable
     make_class_dictable(db.Model)
+
+
+Responses
+---------
+
+.. note:: New in 0.1.4
+
+AlchemyView will return json or HTML depending on the HTTP Accept Header. When returning HTML the template used will be determined by :meth:`AlchemyView._get_template_name`.
+
+Errors
+------
+
+.. note:: New in 0.1.4
+
+If an error occurs and json is returned a dict containing 'message' and 'errors' will be returned. If html is returned a :class:`BadRequest` is raised.
 
 
 Using AlchemyView
@@ -187,6 +199,7 @@ API
 .. autoclass:: flask.ext.alchemyview.AlchemyView
     :members:
     :private-members:
+.. autoclass:: flask.ext.alchemyview.BadRequest
 
 
 Source

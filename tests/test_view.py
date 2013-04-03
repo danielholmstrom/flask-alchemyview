@@ -63,7 +63,7 @@ class TestSimpleModel(unittest.TestCase):
         Base.metadata.create_all(bind=engine)
         self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
-        self.app = Flask('test_view')
+        self.app = Flask('test_view', template_folder="tests/templates")
         SimpleModelView.register(self.app)
         SimpleModelView.session = self.session
         self.session.query(SimpleModel).delete()
@@ -78,6 +78,7 @@ class TestSimpleModel(unittest.TestCase):
         """GET json data"""
         return self.client.get(url,
                                content_type='application/json',
+                               headers=[('Accept', 'application/json')],
                                follow_redirects=follow_redirects)
 
     def json_post(self, url, data, follow_redirects=False):
@@ -85,6 +86,7 @@ class TestSimpleModel(unittest.TestCase):
         return self.client.post(url,
                                 data=json.dumps(data),
                                 content_type='application/json',
+                                headers=[('Accept', 'application/json')],
                                 follow_redirects=follow_redirects)
 
     def json_put(self, url, data, follow_redirects=False):
@@ -92,6 +94,7 @@ class TestSimpleModel(unittest.TestCase):
         return self.client.put(url,
                                data=json.dumps(data),
                                content_type='application/json',
+                               headers=[('Accept', 'application/json')],
                                follow_redirects=follow_redirects)
 
     def json_delete(self, url, data=None, follow_redirects=False):
@@ -99,6 +102,7 @@ class TestSimpleModel(unittest.TestCase):
         return self.client.delete(url,
                                   data=json.dumps(data),
                                   content_type='application/json',
+                                  headers=[('Accept', 'application/json')],
                                   follow_redirects=follow_redirects)
 
     def assert_redirects(self, request, location, status_code=None):
@@ -234,3 +238,27 @@ class TestSimpleModel(unittest.TestCase):
                                          offset=10))
         assert response.status_code == 200
         assert json.loads(response.data)['items'][0]['id'] == 11
+
+    def test_get_html(self):
+        m = SimpleModel(u'name')
+        self.session.add(m)
+        self.session.flush()
+        response = self.client.get(url_for('SimpleModelView:get',
+                                           id=m.id))
+        assert 'ITEM_ID=%d' % m.id in response.data
+
+    def test_get_invalid_id_html(self):
+        response = self.client.get(url_for('SimpleModelView:get',
+                                           id=u'a string'))
+        assert response.status_code == 404
+        assert 'DOCTYPE HTML' in response.data
+        assert '404 Not Found' in response.data
+
+    def test_invalid_offset__html(self):
+        response = self.client.get(url_for('SimpleModelView:index',
+                                           sortby='id',
+                                           offset='invalid'))
+        assert response.status_code == 400
+        assert 'DOCTYPE HTML' in response.data
+        assert 'Bad Request' in response.data
+

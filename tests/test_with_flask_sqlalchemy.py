@@ -55,6 +55,7 @@ class TestSimpleModel(unittest.TestCase):
         # Create the model
         response = self.client.post(url_for('SimpleModelView:post'),
                                     content_type='application/json',
+                                    headers=[('Accept', 'application/json')],
                                     data=json.dumps({u'name': u'a name'}),
                                     follow_redirects=False)
         assert response.status_code == 303
@@ -64,6 +65,7 @@ class TestSimpleModel(unittest.TestCase):
         assert dict(model) == {u'name': u'a name', u'id': model_id}
         # Get the model
         response = self.client.get(url_for('SimpleModelView:get', id=model_id),
+                                   headers=[('Accept', 'application/json')],
                                    content_type='application/json')
         assert response.status_code == 200
         assert json.loads(response.data)['name'] == u'a name'

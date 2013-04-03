@@ -14,6 +14,7 @@ Flask view for SQL-Alchemy declarative models.
 from __future__ import absolute_import, division
 
 import re
+import os
 import json
 import datetime
 import decimal
@@ -21,9 +22,10 @@ import logging
 import traceback
 import colander
 from sqlalchemy.exc import IntegrityError
-from flask import Response, url_for, abort, request, redirect
+from flask import Response, url_for, abort, request, redirect, render_template
 from flask.ext.classy import FlaskView
 from flask import current_app
+from werkzeug.exceptions import HTTPException
 
 
 def _gettext(msg, *args, **kwargs):
@@ -123,6 +125,38 @@ class _JSONEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
+class BadRequest(HTTPException):
+    """HTTPException class that also contains error data
+
+    This will be raised when a request is invalid, use `Flask.errorhandler()`
+    to handle these for HTML responses.
+
+    :ivar data: Dict explaining the error, contains the keys 'message' and \
+            'errors'
+    """
+
+    def __init__(self, code, data):
+        """Create a BadRequest
+
+        If data is an exception it will be converted to a dict, otherwise a
+        dict is assumed.
+        The description will be set to data['message']
+
+        :param code: HTTP Status code
+        :param data: Dict or Exception
+        """
+        if isinstance(data, Exception):
+            self.data = _exception_to_dict(data)
+        else:
+            self.data = (data[u'message']
+                         if u'message' in data
+                         else _(u'Unknown error'))
+            self.data = data
+
+        self.code = code
+        super(BadRequest, self).__init__(self.data[u'message'])
+
+
 class AlchemyView(FlaskView):
     """View for SQLAlchemy dictable models
 
@@ -197,6 +231,10 @@ class AlchemyView(FlaskView):
     in the base query that column, or name of that colum can be mapped to a key
     in the sortby_map.
     """
+
+    template_suffixes = {'text/html': 'jinja2'}
+    """Suffixes for response types, currently 'text/html' is the only one
+    supported"""
 
     def _json_dumps(self, obj, ensure_ascii=False, **kwargs):
         """Load object from json string
@@ -334,12 +372,60 @@ class AlchemyView(FlaskView):
         else:
             return self._get_schema(data)
 
+    def _get_response_mimetype(self):
+        """Get response type from response
+
+        :returns: 'application/json' or 'text/html'
+        """
+        best = request.accept_mimetypes.best_match(['application/json',
+                                                    'text/html'])
+        if best == 'application/json' and \
+                request.accept_mimetypes[best] > \
+                request.accept_mimetypes['text/html']:
+            return 'application/json'
+        else:
+            return 'text/html'
+
+    def _get_template_name(self, name, mimetype):
+        """Get template name for a specific mimetype
+
+        The template name is by default get_route_base()/name.suffix, the
+        suffixes are stored in :attr:`AlchemyView.template_suffixes`.
+
+        :returns: string
+        """
+        return os.path.join(self.get_route_base(),
+                            '%s.%s' % (name,
+                                       self.template_suffixes[mimetype]))
+
+    def _response(self, data, template, status=200):
+        """Get a response
+
+        :raises: If status is beteen 400 and 500 OR data is an exception a \
+                :class:`BadRequest` will be raised.
+
+        :returns: A json or html response, based on the request accept headers
+        """
+        mimetype = self._get_response_mimetype()
+        if mimetype == 'application/json':
+            return self._json_response(data, status)
+        else:
+            if isinstance(data, Exception):
+                if status < 400:
+                    status = 400
+            if status >= 400:
+                raise BadRequest(status, data)
+            else:
+                return render_template(self._get_template_name(template,
+                                                               mimetype),
+                                       data=data)
+
     def get(self, id):
         """Handles GET requests"""
-        return self._json_response(self._get_item(id).
-                                   asdict(**(getattr(self, 'asdict_params',
-                                                     self.dict_params or None)
-                                             or {})))
+        return self._response(self._get_item(id).
+                              asdict(**(getattr(self, 'asdict_params',
+                                                self.dict_params or None)
+                                        or {})), 'get')
 
     def post(self):
         """Handles POST
@@ -361,19 +447,19 @@ class AlchemyView(FlaskView):
                 request.json).deserialize(request.json))
         except Exception, e:
             session.rollback()
-            return self._json_response(e, 400)
+            return self._response(e, 'post', 400)
         else:
             try:
                 item = self.model(**result)
                 session.add(item)
             except Exception, e:
                 session.rollback()
-                return self._json_response(e, 500)
+                return self._response(e, 'post', 500)
             else:
                 try:
                     session.commit()
                 except:
-                    return self._json_response(e, 500)
+                    return self._response(e, 'post', 500)
                 return redirect(self._item_url(item), 303)
 
     def put(self, id):
@@ -389,7 +475,7 @@ class AlchemyView(FlaskView):
             session.add(item)
             session.commit()
         except Exception, e:
-            return self._json_response(e, 400)
+            return self._response(e, 'put', 400)
 
         return redirect(self._item_url(item), 303)
 
@@ -401,9 +487,9 @@ class AlchemyView(FlaskView):
         try:
             session.commit()
         except Exception, e:
-            return self._json_response(e, 400)
+            return self._response(e, 'delete', 400)
         # TODO: What should a delete return?
-        return self._json_response({})
+        return self._response({}, 'delete', 200)
 
     delete = _delete
     """Delete an item
@@ -426,30 +512,36 @@ class AlchemyView(FlaskView):
             limit = min(int(request.args.get('limit', self.page_limit)),
                         self.max_page_limit)
         except:
-            return self._json_response({u'message': _(u'Invalid limit')}, 400)
+            return self._response({u'message': _(u'Invalid limit')},
+                                  'index',
+                                  400)
         if limit > 100:
             limit = 10
         try:
             offset = int(request.args.get('offset', 0))
         except:
-            return self._json_response({u'message': _(u'Invalid offset')},
-                                       400)
+            return self._response({u'message': _(u'Invalid offset')},
+                                  'index',
+                                  400)
         try:
             sortby = request.args.get('sortby', None)
             if sortby:
                 sortby = str(sortby)
         except:
-            return self._json_response({u'message': _(u'Invalid sortby')},
-                                       400)
+            return self._response({u'message': _(u'Invalid sortby')},
+                                  'index',
+                                  400)
         try:
             direction = str(request.args.get('direction', self.sort_direction))
         except:
-            return self._json_response({u'message': _(u'Invalid direction')},
-                                       400)
+            return self._response({u'message': _(u'Invalid direction')},
+                                  'index',
+                                  400)
 
         if direction not in ('asc', 'desc'):
-            return self._json_response({u'message': _(u'Invalid direction')},
-                                       400)
+            return self._response({u'message': _(u'Invalid direction')},
+                                  'index',
+                                  400)
 
         query = self._base_query()
 
@@ -458,7 +550,7 @@ class AlchemyView(FlaskView):
             query = query.order_by(getattr(self.sortby_map[sortby],
                                            direction)())
 
-        return self._json_response({
+        return self._response({
             'items': [p.asdict(**(getattr(self,
                                           'asdict_params',
                                           self.dict_params or None) or {}))
@@ -466,4 +558,5 @@ class AlchemyView(FlaskView):
                       query.limit(limit).offset(offset).all()],
             'count': query.count(),
             'limit': limit,
-            'offset': offset})
+            'offset': offset},
+            'index')

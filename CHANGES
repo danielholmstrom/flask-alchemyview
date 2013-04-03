@@ -1,9 +1,9 @@
 v0.1.4
 ------
 
-
 * _Encoder changed name to _JSONEncoder
 * _JSONEncoder is the default json encoder for AlchemyView
+* AlchemyView returns HTML or JSON based on HTTP Accept Header
 
 v0.1.3
 ------
