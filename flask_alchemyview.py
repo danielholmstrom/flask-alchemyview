@@ -434,6 +434,9 @@ class AlchemyView(FlaskView):
         If everything was successful it will return a 303 redirect to the
         newly created item.
 
+        If any error except validation errors are encountered a 500 will be
+        returned.
+
         :returns: A response
         :rtype: :class:`flask.Response`
 
@@ -460,7 +463,12 @@ class AlchemyView(FlaskView):
                 return redirect(self._item_url(item), 303)
 
     def put(self, id):
-        """Handles PUT"""
+        """Handles PUT
+
+        If any error except validation errors are encountered a 500 will be
+        returned.
+
+        """
         item = self._get_item(id)
         session = self._get_session()
         try:
@@ -471,10 +479,12 @@ class AlchemyView(FlaskView):
                                      self.dict_params or None) or {}))
             session.add(item)
             session.commit()
-        except Exception, e:
+        except colander.Invalid, e:
             return self._response(e, 'put', 400)
-
-        return redirect(self._item_url(item), 303)
+        except Exception, e:
+            return self._response(e, 'put', 500)
+        else:
+            return redirect(self._item_url(item), 303)
 
     def _delete(self, id):
         """Delete an item"""
