@@ -47,6 +47,7 @@ setup(name='Flask-AlchemyView',
                    'Topic :: Software Development :: '
                    'Libraries :: Python Modules'],
       packages=find_packages(),
+      py_modules=['flask_alchemyview'],
       include_package_data=True,
       zip_safe=False,
       install_requires=install_requires,
