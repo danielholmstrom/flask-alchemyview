@@ -1,6 +1,6 @@
 # vim: set fileencoding=utf-8 :
 """
-
+~~~~~~~~~~~~~~~~~
 Flask-AlchemyView
 ~~~~~~~~~~~~~~~~~
 
@@ -42,7 +42,7 @@ except ImportError:
 
 
 _logger = logging.getLogger('flask.ext.alchemyview')
-"""Our logger"""
+"""The logger that is used. It uses the 'flask.ext.alchemyview' name."""
 
 
 def _remove_colander_null(result):
@@ -124,7 +124,11 @@ class _Encoder(json.JSONEncoder):
 
 
 class AlchemyView(FlaskView):
-    """View for SQLAlchemy dictable models"""
+    """View for SQLAlchemy dictable models
+
+    The pre-defined methods will always return JSON, with the mimetype set to
+    text/json.
+    """
 
     JSONEncoder = None
     """The JSON Encoder that should be used to load/dump json"""

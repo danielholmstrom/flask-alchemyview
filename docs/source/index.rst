@@ -10,6 +10,8 @@ FlaskView and supports all Flask-Classy FlaskView functionality.
 
 Flask-AlchemyView uses `colander <http://docs.pylonsproject.org/projects/colander/en/latest/>`_ for validation and `dictalchemy <http://pythonhosted.org/dictalchemy/>`_ for updating/creating/reading models.
 
+.. note:: Currently :class:`AlchemyView` will always return json regardless of the HTTP Accept header.
+
 The session
 -----------
 
@@ -116,7 +118,7 @@ any SchemaNode in the schema returns colander.null it will be removed from the
 update data, None will be preserved. This behaviour cannot be modified at the
 moment.
 
-Updating the item will be done by calling `AlchemyView.model.fromdict`. The parameters will be :attr:`AlchemyView.fromdict_params`, or
+Updating the item will be done by calling `fromdict()` on :attr:`AlchemyView.model`. The parameters will be :attr:`AlchemyView.fromdict_params`, or
 :attr:`AlchemyView.dict_params` if `fromdict_params` isn't set.
 
 On validation error a 400 will be returned, on other errors a 500 will be
@@ -129,9 +131,9 @@ it's best to not try to do it automagically.
 See also
 """"""""
 
-    * :func:`AlchemyView.fromdict_params`
-    * :func:`AlchemyView.dict_params`
-    * :func:`AlchemyView.update_schema`
+    * :attr:`AlchemyView.fromdict_params`
+    * :attr:`AlchemyView.dict_params`
+    * :attr:`AlchemyView.update_schema`
 
 
 POST a new item
@@ -184,6 +186,7 @@ API
 
 .. autoclass:: flask.ext.alchemyview.AlchemyView
     :members:
+    :private-members:
 
 
 Source
