@@ -271,9 +271,6 @@ class AlchemyView(FlaskView):
                         status=status,
                         mimetype='application/json')
 
-    def _json_response_error_message(self, message, status=400):
-        return self._json_response({u'message': message}, status)
-
     def _base_query(self):
         """Get the base query that should be used
 
