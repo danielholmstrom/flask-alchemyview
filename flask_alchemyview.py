@@ -99,7 +99,7 @@ def _exception_to_dict(error):
     return {u'message': _(u'Unknown error'), u'errors': {}}
 
 
-class _Encoder(json.JSONEncoder):
+class _JSONEncoder(json.JSONEncoder):
     """JSON Encoder class that handles conversion for a number of types not
     supported by the default json library
 
@@ -130,7 +130,7 @@ class AlchemyView(FlaskView):
     text/json.
     """
 
-    JSONEncoder = None
+    JSONEncoder = _JSONEncoder
     """The JSON Encoder that should be used to load/dump json"""
 
     session = None
@@ -229,7 +229,7 @@ class AlchemyView(FlaskView):
                 status = 400
             obj = _exception_to_dict(obj)
 
-        return Response(json.dumps(obj),
+        return Response(self._json_dumps(obj),
                         status=status,
                         mimetype='application/json')
 

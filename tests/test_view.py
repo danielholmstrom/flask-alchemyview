@@ -3,6 +3,7 @@ from __future__ import absolute_import, division
 
 import unittest
 import json
+import datetime
 from flask import (
     Flask,
     url_for,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     Column,
     Integer,
     Unicode,
+    DateTime,
 )
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -34,6 +36,9 @@ class SimpleModel(Base):
     id = Column(Integer, primary_key=True)
 
     name = Column(Unicode)
+
+    created = Column(DateTime)
+    # Used to test JSONEncoder
 
     def __init__(self, name):
         self.name = name
@@ -121,6 +126,19 @@ class TestSimpleModel(unittest.TestCase):
         assert json.loads(self.json_get(url_for('SimpleModelView:get',
                                                 id=m.id)).data) == dict(m)
 
+    def test_jsonencoder_encodes_datetime(self):
+        """Test that _JSONEncoder is used by asserting it's converting datetime
+        objects"""
+        m = SimpleModel(u'name')
+        now = datetime.datetime.now()
+        m.created = now
+        self.session.add(m)
+        self.session.flush()
+        expected = dict(m)
+        expected['created'] = expected['created'].isoformat()
+        assert json.loads(self.json_get(url_for('SimpleModelView:get',
+                                                id=m.id)).data) == expected
+
     def test_get_non_existing(self):
         model_id = 1223213124
         model = self.session.query(SimpleModel).get(model_id)
@@ -140,7 +158,8 @@ class TestSimpleModel(unittest.TestCase):
         model_id = int(response.location.split('/')[4])
         model = self.session.query(SimpleModel).get(model_id)
         assert model
-        assert dict(model) == {u'name': u'a name', u'id': model_id}
+        assert model.asdict(exclude=['created']) == {u'name': u'a name',
+                                                     u'id': model_id}
 
     def test_post_with_missing_data(self):
         response = self.json_post(url_for('SimpleModelView:post'), {})
@@ -156,7 +175,8 @@ class TestSimpleModel(unittest.TestCase):
                                  {'name': 'new name'})
         self.assert_redirects(response, response.location)
         m = self.session.query(SimpleModel).get(model_id)
-        assert dict(m) == {u'name': u'new name', u'id': model_id}
+        assert m.asdict(exclude=['created']) == {u'name': u'new name',
+                                                 u'id': model_id}
 
     def test_put_non_existing(self):
         model_id = 1223213124

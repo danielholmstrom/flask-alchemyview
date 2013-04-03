@@ -1,3 +1,10 @@
+v0.1.4
+------
+
+
+* _Encoder changed name to _JSONEncoder
+* _JSONEncoder is the default json encoder for AlchemyView
+
 v0.1.3
 ------
 
