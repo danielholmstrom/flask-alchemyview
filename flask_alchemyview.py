@@ -127,7 +127,7 @@ class AlchemyView(FlaskView):
     """View for SQLAlchemy dictable models
 
     The pre-defined methods will always return JSON, with the mimetype set to
-    text/json.
+    application/json.
     """
 
     JSONEncoder = _JSONEncoder
