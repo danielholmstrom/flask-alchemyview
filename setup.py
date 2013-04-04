@@ -19,7 +19,6 @@ install_requires = [
     'Flask-Classy',
     'colander',
     'dictalchemy',
-    'sphinx'
 ]
 
 # Requirement for running tests
