@@ -254,7 +254,7 @@ class TestSimpleModel(unittest.TestCase):
         assert 'DOCTYPE HTML' in response.data
         assert '404 Not Found' in response.data
 
-    def test_invalid_offset__html(self):
+    def test_invalid_offset_html(self):
         response = self.client.get(url_for('SimpleModelView:index',
                                            sortby='id',
                                            offset='invalid'))
