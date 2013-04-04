@@ -22,9 +22,15 @@ import logging
 import traceback
 import colander
 from sqlalchemy.exc import IntegrityError
-from flask import Response, url_for, abort, request, redirect, render_template
+from flask import (Response,
+                   url_for,
+                   abort,
+                   request,
+                   redirect,
+                   render_template,
+                   current_app,
+                   )
 from flask.ext.classy import FlaskView
-from flask import current_app
 from werkzeug.exceptions import HTTPException
 from jinja2.exceptions import TemplateNotFound
 
