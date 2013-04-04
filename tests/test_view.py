@@ -268,8 +268,10 @@ class TestSimpleModel(unittest.TestCase):
 
     def test_before_render_get(self):
         before_data = 'test_before_render_get'
+
         def fn(self, data):
             return {'before_data': before_data}
+
         setattr(SimpleModelView, 'before_get_render', fn)
         m = SimpleModel(u'name')
         self.session.add(m)
