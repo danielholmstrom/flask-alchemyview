@@ -27,7 +27,7 @@ test_requires = install_requires + [
 ]
 
 setup(name='Flask-AlchemyView',
-      version='0.1.4b1',
+      version='0.1.4b2',
       description="Simple ModelView for auto-generating Flask Views based on "
       "SQLAlchemy models",
       long_description=README,
