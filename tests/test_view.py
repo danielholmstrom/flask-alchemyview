@@ -262,6 +262,10 @@ class TestSimpleModel(unittest.TestCase):
         assert 'DOCTYPE HTML' in response.data
         assert 'Bad Request' in response.data
 
+    def test_missing_template_generates_406(self):
+        response = self.client.get(url_for('SimpleModelView:index'))
+        assert response.status_code == 406
+
     def test_before_render_get(self):
         before_data = 'test_before_render_get'
         def fn(self, data):

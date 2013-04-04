@@ -57,6 +57,11 @@ Adding `is_owner` parameter to a GET request template::
     def before_get_render(self, data):
         return {'is_owner': data[owner_id'] === current_user.id}
 
+Missing templates
+^^^^^^^^^^^^^^^^^
+
+If a template is missing a 406 will be returned, not a 500.
+
 Errors
 ------
 

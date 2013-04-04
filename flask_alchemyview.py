@@ -26,6 +26,7 @@ from flask import Response, url_for, abort, request, redirect, render_template
 from flask.ext.classy import FlaskView
 from flask import current_app
 from werkzeug.exceptions import HTTPException
+from jinja2.exceptions import TemplateNotFound
 
 
 def _gettext(msg, *args, **kwargs):
@@ -423,10 +424,14 @@ class AlchemyView(FlaskView):
                     kwargs = getattr(self, fn_name)(data) or {}
                 else:
                     kwargs = {}
-                return render_template(self._get_template_name(template,
-                                                               mimetype),
-                                       data=data,
-                                       **kwargs)
+                try:
+                    return render_template(self._get_template_name(template,
+                                                                   mimetype),
+                                           data=data,
+                                           **kwargs)
+                except TemplateNotFound:
+                    raise BadRequest(406, {'message':
+                                           _('Not a valid Accept-Header')})
 
     def get(self, id):
         """Handles GET requests"""
