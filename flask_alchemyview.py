@@ -398,6 +398,10 @@ class AlchemyView(FlaskView):
     def _response(self, data, template, status=200):
         """Get a response
 
+        If the response will be rendered with a template and the method
+        '_TEMPLATE_template_vars' is set that method will be called and the
+        returnvalue will be added to the template parameters.
+
         :raises: If status is beteen 400 and 500 OR data is an exception a \
                 :class:`BadRequest` will be raised.
 
@@ -413,9 +417,16 @@ class AlchemyView(FlaskView):
             if status >= 400:
                 raise BadRequest(status, data)
             else:
+                fn_name = 'before_%s_render' % template
+
+                if hasattr(self, fn_name) and callable(getattr(self, fn_name)):
+                    kwargs = getattr(self, fn_name)(data) or {}
+                else:
+                    kwargs = {}
                 return render_template(self._get_template_name(template,
                                                                mimetype),
-                                       data=data)
+                                       data=data,
+                                       **kwargs)
 
     def get(self, id):
         """Handles GET requests"""

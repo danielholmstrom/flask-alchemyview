@@ -45,7 +45,17 @@ Responses
 
 .. note:: New in 0.1.4
 
-AlchemyView will return json or HTML depending on the HTTP Accept Header. When returning HTML the template used will be determined by :meth:`AlchemyView._get_template_name`.
+AlchemyView will return json or HTML depending on the HTTP Accept Header. When returning HTML the template used will be determined by :meth:`AlchemyView._get_template_name`. The response data will be passed to the template in the parameter `data`.
+
+Providing extra variables for a template
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the response is a 200 it's possible to provide extra parameters to the template By adding a method called 'before_<view method>_render'. If that method returns anything it must be a dict containing parameters that will be passed to the template.
+
+Adding `is_owner` parameter to a GET request template::
+
+    def before_get_render(self, data):
+        return {'is_owner': data[owner_id'] === current_user.id}
 
 Errors
 ------

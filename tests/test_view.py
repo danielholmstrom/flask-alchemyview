@@ -262,3 +262,14 @@ class TestSimpleModel(unittest.TestCase):
         assert 'DOCTYPE HTML' in response.data
         assert 'Bad Request' in response.data
 
+    def test_before_render_get(self):
+        before_data = 'test_before_render_get'
+        def fn(self, data):
+            return {'before_data': before_data}
+        setattr(SimpleModelView, 'before_get_render', fn)
+        m = SimpleModel(u'name')
+        self.session.add(m)
+        self.session.flush()
+        response = self.client.get(url_for('SimpleModelView:get', id=m.id))
+        assert before_data in response.data
+        delattr(SimpleModelView, 'before_get_render')

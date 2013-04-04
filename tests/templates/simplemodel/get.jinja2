@@ -1,2 +1,5 @@
 GET TEMPLATE
 ITEM_ID={{data.id}}
+{% if before_data %}
+    {{ before_data }}
+{% endif %}
