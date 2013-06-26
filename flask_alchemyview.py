@@ -100,7 +100,7 @@ def _exception_to_dict(error):
                     'errors': {m.group(2): _(u'Already exists')}}
     elif isinstance(error, colander.Invalid):
         return {u'errors': error.asdict(),
-                u"message": "Invalid Data"}
+                u"message": _("Invalid Data")}
 
     _logger.debug('ecom.utils._exception_to_dict:'
                   'Got unhandled error: %r:%s\nTraceback: %s' %
