@@ -279,3 +279,16 @@ class TestSimpleModel(unittest.TestCase):
         response = self.client.get(url_for('SimpleModelView:get', id=m.id))
         assert before_data in response.data
         delattr(SimpleModelView, 'before_get_render')
+
+    def test_put_missing_data_not_accept_json(self):
+        m = SimpleModel(u'name')
+        self.session.add(m)
+        self.session.flush()
+        model_id = m.id
+        response = self.client.put(
+            url_for('SimpleModelView:put',
+                    id=model_id),
+            data=json.dumps({'fakekey': 'new name'}),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
