@@ -45,7 +45,16 @@ Responses
 
 .. note:: New in 0.1.4
 
-AlchemyView will return json or HTML depending on the HTTP Accept Header. When returning HTML the template used will be determined by :meth:`AlchemyView._get_template_name`. The response data will be passed to the template in the parameter `data`.
+AlchemyView will return json or HTML depending on the HTTP Accept Header. When returning HTML the template used will be determined by :meth:`AlchemyView._get_template_name`. The response data will be passed to the template in the parameter `data`. 
+
+Ambigous accept header
+^^^^^^^^^^^^^^^^^^^^^^
+
+If the client sends both application/json and text/html (or \*/\*) and application/json and text/html has the same weight text/html will be assumed. This is because some browsers sends \*/\*. This means that the client must send application/json with a greater weight than \*/\* or text/html to recieve JSON. AngularJS for example does not do this, so in order to use angularjs and recieve JSON one must explicitly declare the accept header.
+
+AngularJS example::
+
+    $http({method: 'GET', url: '/mymodel/', headers: {Accept: 'application/json'});
 
 Providing extra variables for a template
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
