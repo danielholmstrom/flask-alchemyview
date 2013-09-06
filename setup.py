@@ -7,6 +7,7 @@ A Flask ModelView for SQLAlchemy models.
 """
 
 import os
+import sys
 from setuptools import find_packages
 from distutils.core import setup
 
@@ -25,6 +26,10 @@ install_requires = [
 test_requires = install_requires + [
     'flask-sqlalchemy'
 ]
+
+extra = {}
+if sys.version_info >= (3,):
+    extra['use_2to3'] = True
 
 setup(name='Flask-AlchemyView',
       version='0.1.4b3',
@@ -51,4 +56,5 @@ setup(name='Flask-AlchemyView',
       install_requires=install_requires,
       tests_require=test_requires,
       test_suite='tests',
+      **extra
       )

@@ -10,6 +10,19 @@ FlaskView and supports all Flask-Classy FlaskView functionality.
 
 Flask-AlchemyView uses `colander <http://docs.pylonsproject.org/projects/colander/en/latest/>`_ for validation and `dictalchemy <http://pythonhosted.org/dictalchemy/>`_ for updating/creating/reading models.
 
+Python 3
+--------
+
+.. note:: New in 0.1.4
+
+Flask-AlchemyView passes all tests with Python 3.3.2. However, at the time of writing (2013-09-06) there is a `bug <https://github.com/mitsuhiko/flask-sqlalchemy/pull/89>`_ in Flask-SQLAlchemy that hasn't been fixed in a release so in order to use Flask-AlchemyView with Flask-SQLAlchemy under Python 3.3.2 one must install an unreleased version of Flask-AlchemyView.
+
+Installing unreleased Flask-SQLAlchemy version::
+
+    pip install -e git+https://github.com/mitsuhiko/flask-sqlalchemy#egg=Flask-SQLAlchemy
+
+To summarize, Python3 is not well tested and only against 3.3.2 but it should work if Flask-SQLAlchemy works.
+
 The session
 -----------
 

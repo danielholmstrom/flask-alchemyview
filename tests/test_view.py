@@ -128,7 +128,7 @@ class TestSimpleModel(unittest.TestCase):
         self.session.add(m)
         self.session.flush()
         assert json.loads(self.json_get(url_for('SimpleModelView:get',
-                                                id=m.id)).data) == dict(m)
+                                                id=m.id)).data.decode('utf-8')) == dict(m)
 
     def test_jsonencoder_encodes_datetime(self):
         """Test that _JSONEncoder is used by asserting it's converting datetime
@@ -141,7 +141,7 @@ class TestSimpleModel(unittest.TestCase):
         expected = dict(m)
         expected['created'] = expected['created'].isoformat()
         assert json.loads(self.json_get(url_for('SimpleModelView:get',
-                                                id=m.id)).data) == expected
+                                                id=m.id)).data.decode('utf-8')) == expected
 
     def test_get_non_existing(self):
         model_id = 1223213124
@@ -168,7 +168,7 @@ class TestSimpleModel(unittest.TestCase):
     def test_post_with_missing_data(self):
         response = self.json_post(url_for('SimpleModelView:post'), {})
         assert response.status_code == 400
-        assert u'name' in json.loads(response.data)['errors']
+        assert u'name' in json.loads(response.data.decode('utf-8'))['errors']
 
     def test_put(self):
         m = SimpleModel(u'name')
@@ -219,12 +219,12 @@ class TestSimpleModel(unittest.TestCase):
     def test_list_limit(self):
         response = self.get_with_limit(5)
         assert response.status_code == 200
-        assert len(json.loads(response.data)['items']) == 5
+        assert len(json.loads(response.data.decode('utf-8'))['items']) == 5
 
     def test_list_limit_greater_than_max(self):
         response = self.get_with_limit(1000)
         assert response.status_code == 200
-        assert len(json.loads(response.data)['items']) == 20
+        assert len(json.loads(response.data.decode('utf-8'))['items']) == 20
 
     def test_offset(self):
         self.session.query(SimpleModel).delete()
@@ -237,7 +237,7 @@ class TestSimpleModel(unittest.TestCase):
                                          sortby='id',
                                          offset=10))
         assert response.status_code == 200
-        assert json.loads(response.data)['items'][0]['id'] == 11
+        assert json.loads(response.data.decode('utf-8'))['items'][0]['id'] == 11
 
     def test_get_html(self):
         m = SimpleModel(u'name')
@@ -245,22 +245,22 @@ class TestSimpleModel(unittest.TestCase):
         self.session.flush()
         response = self.client.get(url_for('SimpleModelView:get',
                                            id=m.id))
-        assert 'ITEM_ID=%d' % m.id in response.data
+        assert 'ITEM_ID=%d' % m.id in response.data.decode('utf-8')
 
     def test_get_invalid_id_html(self):
         response = self.client.get(url_for('SimpleModelView:get',
                                            id=u'a string'))
         assert response.status_code == 404
-        assert 'DOCTYPE HTML' in response.data
-        assert '404 Not Found' in response.data
+        assert 'DOCTYPE HTML' in response.data.decode('utf-8')
+        assert '404 Not Found' in response.data.decode('utf-8')
 
     def test_invalid_offset_html(self):
         response = self.client.get(url_for('SimpleModelView:index',
                                            sortby='id',
                                            offset='invalid'))
         assert response.status_code == 400
-        assert 'DOCTYPE HTML' in response.data
-        assert 'Bad Request' in response.data
+        assert 'DOCTYPE HTML' in response.data.decode('utf-8')
+        assert 'Bad Request' in response.data.decode('utf-8')
 
     def test_missing_template_generates_406(self):
         response = self.client.get(url_for('SimpleModelView:index'))
@@ -277,7 +277,7 @@ class TestSimpleModel(unittest.TestCase):
         self.session.add(m)
         self.session.flush()
         response = self.client.get(url_for('SimpleModelView:get', id=m.id))
-        assert before_data in response.data
+        assert before_data in response.data.decode('utf-8')
         delattr(SimpleModelView, 'before_get_render')
 
     def test_put_missing_data_not_accept_json(self):

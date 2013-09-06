@@ -68,4 +68,4 @@ class TestSimpleModel(unittest.TestCase):
                                    headers=[('Accept', 'application/json')],
                                    content_type='application/json')
         assert response.status_code == 200
-        assert json.loads(response.data)['name'] == u'a name'
+        assert json.loads(response.data.decode('utf-8'))['name'] == u'a name'
