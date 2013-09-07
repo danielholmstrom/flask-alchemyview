@@ -32,7 +32,7 @@ if sys.version_info >= (3,):
     extra['use_2to3'] = True
 
 setup(name='Flask-AlchemyView',
-      version='0.1.4b4',
+      version='0.1.4',
       description="Simple ModelView for auto-generating Flask Views based on "
       "SQLAlchemy models",
       long_description=README,
