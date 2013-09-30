@@ -146,20 +146,15 @@ class BadRequest(HTTPException):
     def __init__(self, code, data):
         """Create a BadRequest
 
-        If data is an exception it will be converted to a dict, otherwise a
-        dict is assumed.
-        The description will be set to data['message']
+        The description will be set to data['message'] or 'Unknown Error'.
 
         :param code: HTTP Status code
-        :param data: Dict or Exception
+        :param data: Dict of information about the error
         """
-        if isinstance(data, Exception):
-            self.data = _exception_to_dict(data)
-        else:
-            self.data = (data[u'message']
-                         if u'message' in data
-                         else _(u'Unknown error'))
-            self.data = data
+        self.data = (data[u'message']
+                        if u'message' in data
+                        else _(u'Unknown error'))
+        self.data = data
 
         self.code = code
         super(BadRequest, self).__init__(self.data[u'message'])
@@ -261,6 +256,35 @@ class AlchemyView(FlaskView):
     def _json_loads(self, string, **kwargs):
         """Load json"""
         return json.loads(string, **kwargs)
+
+    def _exception_to_dict(self, exception):
+        """Convert an Exception to a dict
+
+        This method is used to create json responses when an Exception occurs.
+        Default implementation is :meth:`_exception_to_dict`.
+
+        :param exception: The Exception
+
+        :returns: Dict created from `exception`
+        """
+        return _exception_to_dict(exception)
+
+    def _bad_html_request(self, code, data=None):
+        """Create a :class:`BadRequest`
+
+        If `data` is an Exception :meth:`AlchemyView._exception_to_dict` will
+        be used to convert it to a dict.
+
+        :param code: Status code
+        :param data: Dict or Exception
+
+        :returns: a :class:`BadRequest`
+        """
+
+        data = data or {}
+        if isinstance(data, Exception):
+            data = _exception_to_dict(data)
+        return BadRequest(code, data)
 
     def _json_response(self, obj, status=200):
         """Get a json response
@@ -411,7 +435,8 @@ class AlchemyView(FlaskView):
         returnvalue will be added to the template parameters.
 
         :raises: If status is beteen 400 and 500 OR data is an exception a \
-                :class:`BadRequest` will be raised.
+                :class:`BadRequest` will be raised if the client wants an \
+                HTML response
 
         :returns: A json or html response, based on the request accept headers
         """
@@ -423,7 +448,7 @@ class AlchemyView(FlaskView):
                 if status < 400:
                     status = 400
             if status >= 400:
-                raise BadRequest(status, data)
+                raise self._bad_html_request(status, data)
             else:
                 fn_name = 'before_%s_render' % template
 
@@ -437,8 +462,9 @@ class AlchemyView(FlaskView):
                                            data=data,
                                            **kwargs)
                 except TemplateNotFound:
-                    raise BadRequest(406, {'message':
-                                           _('Not a valid Accept-Header')})
+                    raise self._bad_html_request(
+                        406, {'message':
+                              _('Not a valid Accept-Header')})
 
     def get(self, id):
         """Handles GET requests"""
