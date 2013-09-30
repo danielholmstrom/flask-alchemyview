@@ -9,27 +9,33 @@ from flask import (
     url_for,
 )
 
-from flask_alchemyview import AlchemyView
+from flask.ext.sqlalchemy import SQLAlchemy
+
+from flask_alchemyview import (
+    AlchemyView
+)
+
+from dictalchemy import make_class_dictable
+
 
 from sqlalchemy import (
-    create_engine,
     Column,
     Integer,
     Unicode,
     DateTime,
 )
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 import colander as c
-from dictalchemy import DictableModel
 
 
-engine = create_engine('sqlite://')
+SQLALCHEMY_DATABASE_URI = 'sqlite://'
 
-Base = declarative_base(cls=DictableModel)
+app = Flask(__name__)
+app.config.from_object(__name__)
+db = SQLAlchemy(app)
+make_class_dictable(db.Model)
 
 
-class SimpleModel(Base):
+class SimpleModel(db.Model):
 
     __tablename__ = 'simplemodel'
 
@@ -56,16 +62,18 @@ class SimpleModelView(AlchemyView):
     max_page_limit = 20
 
 
+# Create db and register view
+db.create_all()
+SimpleModelView.register(app)
+
+
 class TestSimpleModel(unittest.TestCase):
     """Test a simple model"""
 
     def setUp(self):
-        Base.metadata.create_all(bind=engine)
-        self.Session = sessionmaker(bind=engine)
-        self.session = self.Session()
-        self.app = Flask('test_view', template_folder="tests/templates")
-        SimpleModelView.register(self.app)
-        SimpleModelView.session = self.session
+        AlchemyView.session = db.session
+        self.app = app
+        self.session = db.session
         self.session.query(SimpleModel).delete()
         self.ctx = self.app.test_request_context()
         self.ctx.push()
