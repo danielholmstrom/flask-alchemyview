@@ -49,13 +49,18 @@ class SimpleModel(db.Model):
     created = Column(DateTime)
     # Used to test JSONEncoder
 
-    def __init__(self, name):
+    unique_int = Column(Integer(), nullable=True, default=None, unique=True)
+    # Used to test uniqueness
+
+    def __init__(self, name, unique_int=None):
         self.name = name
+        self.unique_int = unique_int
 
 
 class SimpleModelSchema(c.MappingSchema):
 
     name = c.SchemaNode(c.String())
+    unique_int = c.SchemaNode(c.Integer(), missing=None)
 
 
 class SimpleModelView(AlchemyView):
@@ -173,13 +178,47 @@ class TestSimpleModel(unittest.TestCase):
         model_id = int(response.location.split('/')[4])
         model = self.session.query(SimpleModel).get(model_id)
         assert model
-        assert model.asdict(exclude=['created']) == {u'name': u'a name',
-                                                     u'id': model_id}
+        assert model.asdict(exclude=['created',
+                                     'unique_int']) == {u'name': u'a name',
+                                                        u'id': model_id}
 
     def test_post_with_missing_data(self):
         response = self.json_post(url_for('SimpleModelView:post'), {})
         assert response.status_code == 400
         assert u'name' in json.loads(response.data.decode('utf-8'))['errors']
+
+    def test_post_integrity_error_400(self):
+        unique_int = 4;
+        response = self.json_post(url_for('SimpleModelView:post'),
+                                  {'name': 'a name',
+                                   'unique_int': unique_int})
+        self.assert_redirects(response, response.location)
+        model_id = int(response.location.split('/')[4])
+        model = self.session.query(SimpleModel).get(model_id)
+        assert model
+        response = self.json_post(url_for('SimpleModelView:post'),
+                                  {'name': 'a name',
+                                   'unique_int': unique_int})
+        assert response.status_code == 400,\
+                "Was {0}, should be {1}".format(response.status_code, 400)
+
+    def test_post_integrity_error_500(self):
+        unique_int = 4;
+        old_code = SimpleModelView.integrity_error_status_code
+        SimpleModelView.integrity_error_status_code = 500
+        response = self.json_post(url_for('SimpleModelView:post'),
+                                  {'name': 'a name',
+                                   'unique_int': unique_int})
+        self.assert_redirects(response, response.location)
+        model_id = int(response.location.split('/')[4])
+        model = self.session.query(SimpleModel).get(model_id)
+        assert model
+        response = self.json_post(url_for('SimpleModelView:post'),
+                                  {'name': 'a name',
+                                   'unique_int': unique_int})
+        assert response.status_code == 500,\
+                "Was {0}, should be {1}".format(response.status_code, 500)
+        SimpleModelView.integrity_error_status_code = old_code
 
     def test_put(self):
         m = SimpleModel(u'name')
@@ -190,8 +229,9 @@ class TestSimpleModel(unittest.TestCase):
                                  {'name': 'new name'})
         self.assert_redirects(response, response.location)
         m = self.session.query(SimpleModel).get(model_id)
-        assert m.asdict(exclude=['created']) == {u'name': u'new name',
-                                                 u'id': model_id}
+        assert m.asdict(exclude=['created',
+                                 'unique_int']) == {u'name': u'new name',
+                                                    u'id': model_id}
 
     def test_put_non_existing(self):
         model_id = 1223213124

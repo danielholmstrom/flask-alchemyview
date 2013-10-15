@@ -226,6 +226,10 @@ class AlchemyView(FlaskView):
     """Suffixes for response types, currently 'text/html' is the only one
     supported"""
 
+    integrity_error_status_code = 400
+    """The status code an :class:`sqlalchemy.exc.IntegrityError` should
+    return"""
+
     def _json_dumps(self, obj, ensure_ascii=False, **kwargs):
         """Load object from json string
 
@@ -494,6 +498,9 @@ class AlchemyView(FlaskView):
             else:
                 try:
                     session.commit()
+                except IntegrityError, e:
+                    return self._response(e, 'post',
+                                          self.integrity_error_status_code)
                 except Exception, e:
                     return self._response(e, 'post', 500)
                 return redirect(self._item_url(item), 303)
@@ -515,6 +522,9 @@ class AlchemyView(FlaskView):
                                      self.dict_params or None) or {}))
             session.add(item)
             session.commit()
+        except IntegrityError, e:
+            return self._response(e, 'put',
+                                  self.integrity_error_status_code)
         except colander.Invalid, e:
             return self._response(e, 'put', 400)
         except Exception, e:
