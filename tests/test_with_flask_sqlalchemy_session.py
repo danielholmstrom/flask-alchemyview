@@ -6,6 +6,7 @@ import unittest
 
 from flask import Flask, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.babel import Babel
 from flask.ext.alchemyview import AlchemyView
 
 from dictalchemy import make_class_dictable
@@ -15,6 +16,7 @@ SQLALCHEMY_DATABASE_URI = 'sqlite://'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
+babel = Babel(app)
 db = SQLAlchemy(app)
 make_class_dictable(db.Model)
 

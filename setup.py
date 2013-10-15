@@ -18,6 +18,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 install_requires = [
     'SQLAlchemy>=0.8.0',
     'Flask-Classy',
+    'Flask-Babel',
     'colander',
     'dictalchemy',
 ]

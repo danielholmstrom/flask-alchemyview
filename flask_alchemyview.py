@@ -34,20 +34,7 @@ from flask.ext.classy import FlaskView
 from werkzeug.exceptions import HTTPException
 from jinja2.exceptions import TemplateNotFound
 
-
-def _gettext(msg, *args, **kwargs):
-    """Dummy translation method used if Flask-Babel isn't installed
-
-    :returns: Formatted string
-    """
-    return re.sub(r'%\(([a-z0-9_]+)\)', r'{\1}', msg).format(*args,
-                                                             **kwargs)
-
-try:
-    from flask.ext.babel import gettext
-    _ = gettext
-except ImportError:
-    _ = _gettext
+from flask.ext.babel import gettext as _
 
 
 _logger = logging.getLogger('flask.ext.alchemyview')
@@ -96,7 +83,7 @@ def _exception_to_dict(error):
         m = re.search(r'(Key) \((\w+)\)=\(([^)]*)\) already exists',
                       str(error.orig))
         if m:
-            return {u'message': _(u"'%(key)' already exists", key=m.group(2)),
+            return {u'message': _(u"'%(key)s' already exists", key=m.group(2)),
                     'errors': {m.group(2): _(u'Already exists')}}
     elif isinstance(error, colander.Invalid):
         return {u'errors': error.asdict(),

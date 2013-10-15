@@ -10,6 +10,7 @@ from flask import (
 )
 
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.babel import Babel
 
 from flask_alchemyview import (
     AlchemyView
@@ -33,6 +34,8 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 db = SQLAlchemy(app)
 make_class_dictable(db.Model)
+babel = Babel(app)
+
 
 
 class SimpleModel(db.Model):
