@@ -2,6 +2,7 @@ v0.1.4.1
 --------
 
 * Flask-Babel is now a dependency
+* _get_update_schema takes `id` as first parameter
 
 v0.1.4
 ------

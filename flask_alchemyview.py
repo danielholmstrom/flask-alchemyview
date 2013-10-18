@@ -382,8 +382,11 @@ class AlchemyView(FlaskView):
         else:
             return self._get_schema(data)
 
-    def _get_update_schema(self, data):
+    def _get_update_schema(self, id, data):
         """Get colander update schema
+
+        :param id: The id `put` was called with
+        :param data: The data `put` was called with
 
         :returns: Colander schema for create data
         """
@@ -516,6 +519,7 @@ class AlchemyView(FlaskView):
         session = self._get_session()
         try:
             result = _remove_colander_null(self._get_update_schema(
+                id,
                 request.json).deserialize(request.json))
             item.fromdict(result,
                           **(getattr(self, 'fromdict_params',
