@@ -353,6 +353,21 @@ class AlchemyView(FlaskView):
 
         return item
 
+
+    def _get_create_item(self, **kwargs):
+        """Get an item that should be used during create
+
+        Default implementation creates a new `AlchemyView.model` instance using
+        kwargs.
+
+        kwargs::
+
+            Arguments that has been passed through the create schema
+
+        :returns: SQLAlchemy model
+        """
+        return self.model(**kwargs)
+
     def _get_session(self):
         """Get SQLAlchemy session
 
@@ -493,7 +508,7 @@ class AlchemyView(FlaskView):
             return self._response(e, 'post', 400)
         else:
             try:
-                item = self.model(**result)
+                item = self._get_create_item(**result)
                 session.add(item)
             except Exception, e:
                 session.rollback()
