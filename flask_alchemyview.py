@@ -378,6 +378,43 @@ class AlchemyView(FlaskView):
         """
         return self.model(**kwargs)
 
+    def _populate_existing_item(self, item, data, route_arguments):
+        """Populate an existing item from request data
+
+        This method is used by :meth:`AlchemyView._put` to populate an item
+        from request data.
+
+        :param item: The item read from database
+        :param data: Request data deserialized through the update schema
+        :param route_arguments: Route arguments
+
+        :returns: item or another instance that will be added to the database
+        """
+        item.fromdict(data,
+                      **(getattr(self, 'fromdict_params',
+                                 self.dict_params or None) or {}))
+        return item
+
+    def _update_item(self, item, data, route_arguments):
+        """Update an item based on request data
+
+        A rollback will be issued if an exception is raised from this method.
+        Any documented exception is fine to raise from this method.
+
+        :param item: The item read from database
+        :param data: Request data
+        :param route_arguments: Route arguments
+
+        :raises: :class:`sqlalchemy.ext.IntegrityError` if an integrity error \
+        was encoutered(results in a 400)
+        :raises: :class:`colander.Invalid` if a validation error was \
+        encountered(results in a 400)
+        :raises: :class:`Exception` On any other error(results in a 500)
+
+        :returns: The item
+        """
+        return self._populate_existing_item(item, data, route_arguments)
+
     def _get_session(self):
         """Get SQLAlchemy session
 
@@ -559,25 +596,30 @@ class AlchemyView(FlaskView):
         returned.
 
         """
-        item = self._get_item(**kwargs)
+
         session = self._get_session()
         try:
+            # item is read before validation etc. because we want a 404 if the
+            # item doesn't exist regardless of the validity of the parameters,
+            # which would return a 400 so don't change order here.
+            item = self._get_item(**kwargs)
             result = _remove_colander_null(self._get_update_schema(
                 data=request.json,
                 pk=kwargs
             ).deserialize(request.json))
-            item.fromdict(result,
-                          **(getattr(self, 'fromdict_params',
-                                     self.dict_params or None) or {}))
+            item = self._update_item(item, result, kwargs)
             session.add(item)
             session.commit()
         except IntegrityError, e:
+            session.rollback()
             return self._response(e, 'put',
                                   self.integrity_error_status_code)
         except colander.Invalid, e:
+            session.rollback()
             return self._response(e, 'put', 400)
-        except Exception, e:
-            return self._response(e, 'put', 500)
+        except HTTPException, e:
+            session.rollback()
+            return e
         else:
             return redirect(self._item_url(item), 303)
 
