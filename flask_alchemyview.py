@@ -326,7 +326,7 @@ class AlchemyView(FlaskView):
         :raises: Exception if the primary key is a composite or not \
                 int or string
 
-        :returns: An item, calls flask.abort(400) if the item isn't found
+        :returns: An item, calls flask.abort(404) if the item isn't found
         """
         primary_key = [(column.name, column.type.python_type)
                        for column in self.model.__table__.primary_key]
