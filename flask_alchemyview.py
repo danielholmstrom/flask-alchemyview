@@ -316,12 +316,14 @@ class AlchemyView(FlaskView):
                        for column in self.model.__table__.primary_key]
         primary_key_name = primary_key[0][0]
         return url_for(self.build_route_name('get'),
-                       id=getattr(item, primary_key_name))
+                       **{primary_key_name: getattr(item, primary_key_name)})
 
-    def _get_item(self, id):
-        """Get item based on id
+    def _get_item(self, **kwargs):
+        """Get item based on kwargs
 
-        Can handle models with int and string primary keys.
+        This is used in :meth:`AlchemyView.put` and :meth:`AlchemyView.get`,
+        not in :meth:`AlchemyView.index`. Can handle models with int or string
+        primary key.
 
         :raises: Exception if the primary key is a composite or not \
                 int or string
@@ -330,23 +332,31 @@ class AlchemyView(FlaskView):
         """
         primary_key = [(column.name, column.type.python_type)
                        for column in self.model.__table__.primary_key]
+
         if len(primary_key) != 1:
             raise Exception("AlchemyView doesn't handle models with "
                             "composite primary key")
+
         primary_key_type = primary_key[0][1]
         primary_key_name = primary_key[0][0]
+
         if primary_key_type not in (int, str, unicode):
             raise Exception("AlchemyView can only handle int and string "
                             "primary keys not %r" % primary_key_type)
+        pk_value = kwargs.get(primary_key_name, None)
+
+        if pk_value is None:
+            abort(404)
+
         try:
-            if type(id) != primary_key_type:
-                id = primary_key_type(id)
+            if type(pk_value) != primary_key_type:
+                pk_value = primary_key_type(pk_value)
         except:
             abort(404)
 
         item = self._base_query().filter(
             getattr(self.model,
-                    primary_key_name) == id).limit(1).first()
+                    primary_key_name) == pk_value).limit(1).first()
 
         if not item:
             abort(404)
@@ -383,12 +393,16 @@ class AlchemyView(FlaskView):
 
         This schema is used if create_schema or update_schema isn't set.
 
+        :param data: dict with data `put` was called with
+
         :returns: Colander schema for create or update schema
         """
         return self.schema()
 
     def _get_create_schema(self, data):
         """Get colander schema for create
+
+        :param data: dict with data used during create
 
         :returns: Colander schema for create data
         """
@@ -397,11 +411,20 @@ class AlchemyView(FlaskView):
         else:
             return self._get_schema(data)
 
-    def _get_update_schema(self, id, data):
+    def _get_update_schema(self, data, pk):
         """Get colander update schema
 
-        :param id: The id `put` was called with
+        NOTE::
+
+        The order of the arguments here `pk` and `data` is will most likely
+        change, so use named parameters for this method. The current order is
+        because of backwards compability.
+
+        If `update_schema` is set that schema will be returned, otherwise
+        `_get_schema` will be called.
+
         :param data: The data `put` was called with
+        :param pk: The primary key `put` was called with
 
         :returns: Colander schema for create data
         """
@@ -476,8 +499,11 @@ class AlchemyView(FlaskView):
                               _('Not a valid Accept-Header')})
 
     def get(self, id):
+        return self._get(id=id)
+
+    def _get(self, **kwargs):
         """Handles GET requests"""
-        return self._response(self._get_item(id).
+        return self._response(self._get_item(**kwargs).
                               asdict(**(getattr(self, 'asdict_params',
                                                 self.dict_params or None)
                                         or {})), 'get')
@@ -524,18 +550,22 @@ class AlchemyView(FlaskView):
                 return redirect(self._item_url(item), 303)
 
     def put(self, id):
+        return self._put(id=id)
+
+    def _put(self, **kwargs):
         """Handles PUT
 
         If any error except validation errors are encountered a 500 will be
         returned.
 
         """
-        item = self._get_item(id)
+        item = self._get_item(**kwargs)
         session = self._get_session()
         try:
             result = _remove_colander_null(self._get_update_schema(
-                id,
-                request.json).deserialize(request.json))
+                data=request.json,
+                pk=kwargs
+            ).deserialize(request.json))
             item.fromdict(result,
                           **(getattr(self, 'fromdict_params',
                                      self.dict_params or None) or {}))
@@ -551,9 +581,12 @@ class AlchemyView(FlaskView):
         else:
             return redirect(self._item_url(item), 303)
 
-    def _delete(self, id):
-        """Delete an item"""
-        item = self._get_item(id)
+    def _delete(self, **kwargs):
+        """Delete an item
+
+        :param kwargs: Is sent to `_get_item`
+        """
+        item = self._get_item(**kwargs)
         session = self._get_session()
         session.delete(item)
         try:
@@ -563,13 +596,17 @@ class AlchemyView(FlaskView):
         # TODO: What should a delete return?
         return self._response({}, 'delete', 200)
 
-    delete = _delete
+    def delete(self, id):
+        return self._delete(id=id)
     """Delete an item
 
-    This is just an alias for :meth:`AlchemyView._delete`.
+    Calls self._delete(id)
     """
 
     def index(self):
+        return self._index()
+
+    def _index(self):
         """Returns a list
 
         The response look like this::

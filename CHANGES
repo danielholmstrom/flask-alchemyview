@@ -1,6 +1,8 @@
 v0.1.4.1
 --------
 
+* All `public` methods are calling their equivalent `protected` methods.
+* _get_update_schema recieves prikary key as second argument
 * Flask-Babel is now a dependency
 * _get_update_schema takes `id` as first parameter
 * New method _get_create_item() is used when creating new items
