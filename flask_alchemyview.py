@@ -633,7 +633,7 @@ class AlchemyViewMixin(FlaskView):
         return self._response({}, 'delete', 200)
 
 
-    def _list(self):
+    def _list(self, request_arguments, route_arguments=None):
         """Returns a list of items
 
         The response look like this::
@@ -643,9 +643,12 @@ class AlchemyViewMixin(FlaskView):
             limit: Integer
             offset: Integer
 
+        :param request_arguments: The request arguments
+        :param route_arguments: Route arguments passed on to :meth:`AlchemyViewMixin:_get_base_query`
         """
+        route_arguments = route_arguments or {}
         try:
-            limit = min(int(request.args.get('limit', self.page_limit)),
+            limit = min(int(request_arguments.get('limit', self.page_limit)),
                         self.max_page_limit)
         except:
             return self._response({u'message': _(u'Invalid limit')},
@@ -654,13 +657,13 @@ class AlchemyViewMixin(FlaskView):
         if limit > 100:
             limit = 10
         try:
-            offset = int(request.args.get('offset', 0))
+            offset = int(request_arguments.get('offset', 0))
         except:
             return self._response({u'message': _(u'Invalid offset')},
                                   'index',
                                   400)
         try:
-            sortby = request.args.get('sortby', None)
+            sortby = request_arguments.get('sortby', None)
             if sortby:
                 sortby = str(sortby)
         except:
@@ -668,7 +671,8 @@ class AlchemyViewMixin(FlaskView):
                                   'index',
                                   400)
         try:
-            direction = str(request.args.get('direction', self.sort_direction))
+            direction = str(request_arguments.get('direction',
+                                                  self.sort_direction))
         except:
             return self._response({u'message': _(u'Invalid direction')},
                                   'index',
@@ -679,7 +683,7 @@ class AlchemyViewMixin(FlaskView):
                                   'index',
                                   400)
 
-        query = self._base_query()
+        query = self._base_query(**route_arguments)
 
         # Add sortby
         if sortby and self.sortby_map and sortby in self.sortby_map:
@@ -735,4 +739,4 @@ class AlchemyView(AlchemyViewMixin):
 
         Calls :meth:`AlchemyViewMixin._list`
         """
-        return self._list()
+        return self._list(request.args)
