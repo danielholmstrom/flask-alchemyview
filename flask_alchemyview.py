@@ -147,11 +147,11 @@ class BadRequest(HTTPException):
         super(BadRequest, self).__init__(self.data[u'message'])
 
 
-class AlchemyView(FlaskView):
-    """View for SQLAlchemy dictable models
+class AlchemyViewMixin(FlaskView):
+    """View mixin for SQLAlchemy dictable models together with FlaskView
 
-    The pre-defined methods will always return JSON, with the mimetype set to
-    application/json.
+    This view does not expose any methods that will be routed by
+    :class:`flask.ext.classy.FlaskView`.
     """
 
     JSONEncoder = _JSONEncoder
@@ -535,9 +535,6 @@ class AlchemyView(FlaskView):
                         406, {'message':
                               _('Not a valid Accept-Header')})
 
-    def get(self, id):
-        return self._get(id=id)
-
     def _get(self, **kwargs):
         """Handles GET requests"""
         return self._response(self._get_item(**kwargs).
@@ -545,7 +542,7 @@ class AlchemyView(FlaskView):
                                                 self.dict_params or None)
                                         or {})), 'get')
 
-    def post(self):
+    def _post(self):
         """Handles POST
 
         This method will create a model with request data if the data was
@@ -585,9 +582,6 @@ class AlchemyView(FlaskView):
                 except Exception, e:
                     return self._response(e, 'post', 500)
                 return redirect(self._item_url(item), 303)
-
-    def put(self, id):
-        return self._put(id=id)
 
     def _put(self, **kwargs):
         """Handles PUT
@@ -638,18 +632,9 @@ class AlchemyView(FlaskView):
         # TODO: What should a delete return?
         return self._response({}, 'delete', 200)
 
-    def delete(self, id):
-        return self._delete(id=id)
-    """Delete an item
 
-    Calls self._delete(id)
-    """
-
-    def index(self):
-        return self._index()
-
-    def _index(self):
-        """Returns a list
+    def _list(self):
+        """Returns a list of items
 
         The response look like this::
 
@@ -711,3 +696,43 @@ class AlchemyView(FlaskView):
             'limit': limit,
             'offset': offset},
             'index')
+
+
+class AlchemyView(AlchemyViewMixin):
+    """Standard view that exposes index, get, put, post and delete"""
+
+
+    def get(self, id):
+        """Standard read item GET implementation
+
+        Calls :meth:`AlchemyViewMixin._get`
+        """
+        return self._get(id=id)
+
+    def post(self):
+        """Standard POST implementation
+
+        Calls :meth:`AlchemyViewMixin._post`
+        """
+        return self._post()
+
+    def put(self, id):
+        """Standard PUT implementation
+
+        Calls :meth:`AlchemyViewMixin._put`
+        """
+        return self._put(id=id)
+
+    def delete(self, id):
+        """Standard DELETE implementation
+
+        Calls :meth:`AlchemyViewMixin._delete`
+        """
+        return self._delete(id=id)
+
+    def index(self):
+        """Standard list GET implementation
+
+        Calls :meth:`AlchemyViewMixin._list`
+        """
+        return self._list()

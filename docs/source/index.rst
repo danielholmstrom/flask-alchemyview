@@ -129,7 +129,7 @@ After this the following routes has been defined:
 
 So far so good, but that can easily be done without AlchemyView. So why use AlchemyView? Well, it's pretty configurable. There is support for different schemas depending on weather a PUT or POST is made, it can follow relationships on GET, and to some extent on PUT and POST also. It can take `limit`, `offset`, `sortby` and `direction` arguments when listing.
 
-The get, post, put and delete methods are calling their equivalent prepended with an underscore. For example `get(id)` calls `_get(**kwargs)`. This makes it easier to add routes with more than one named parameter. Flask-Classy checks the argument list of non-underscore methods to determine the route.
+The get, post, put and delete methods are calling their equivalent prepended with an underscore. For example `get(id)` calls `_get(**kwargs)`. This makes it easier to add routes with more than one named parameter. Flask-Classy checks the argument list of non-underscore methods to determine the route. If you don't want these methods to be exposed use :class:`AlchemyViewMixin` instead.
 
 GET an item
 ^^^^^^^^^^^
@@ -236,6 +236,9 @@ API
 ---
 
 .. autoclass:: flask.ext.alchemyview.AlchemyView
+    :members:
+    :private-members:
+.. autoclass:: flask.ext.alchemyview.AlchemyViewMixin
     :members:
     :private-members:
 .. autoclass:: flask.ext.alchemyview.BadRequest

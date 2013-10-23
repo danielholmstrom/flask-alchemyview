@@ -1,6 +1,7 @@
 v0.1.4.1
 --------
 
+* Added class AlchemyViewMixin, which contains everythin but doesn't expose methods without underscore
 * All `public` methods are calling their equivalent `protected` methods.
 * _get_update_schema recieves prikary key as second argument
 * Flask-Babel is now a dependency
