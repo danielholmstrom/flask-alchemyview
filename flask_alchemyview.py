@@ -436,7 +436,7 @@ class AlchemyViewMixin(FlaskView):
         """
         return self.schema()
 
-    def _get_create_schema(self, data, route_arguments=None):
+    def _get_create_schema(self, data, route_arguments):
         """Get colander schema for create
 
         :param data: dict with data used during create
