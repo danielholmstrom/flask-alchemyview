@@ -294,7 +294,7 @@ class AlchemyViewMixin(FlaskView):
                         status=status,
                         mimetype='application/json')
 
-    def _base_query(self):
+    def _base_query(self, **kwargs):
         """Get the base query that should be used
 
         For example add joins here. Default implementation returns
@@ -436,7 +436,7 @@ class AlchemyViewMixin(FlaskView):
         """
         return self.schema()
 
-    def _get_create_schema(self, data):
+    def _get_create_schema(self, data, route_arguments):
         """Get colander schema for create
 
         :param data: dict with data used during create
@@ -542,27 +542,45 @@ class AlchemyViewMixin(FlaskView):
                                                 self.dict_params or None)
                                         or {})), 'get')
 
-    def _post(self):
+    def _get_create_data(self, request_arguments, route_arguments):
+        """Get create data based on request_arguments and route_arguments
+
+        Default implementation ignores `route_arguments` ans simply returns the
+        request_arguments.
+
+        :param request_arguments: dict of request data
+        :param route_arguments: dict of arguments from routing
+
+        :return: dict of data used for creating a new item
+        """
+
+        return request_arguments
+
+    def _post(self, data, route_arguments):
         """Handles POST
 
         This method will create a model with request data if the data was
         valid. It validates the data with
         :meth:`AlchemyView._get_create_schema`.
 
-        If everything was successful it will return a 303 redirect to the
+        If everything was successfull it will return a 303 redirect to the
         newly created item.
 
         If any error except validation errors are encountered a 500 will be
         returned.
+
+        :param data: dict of request data
+        :param route_arguments: dict of route arguments
 
         :returns: A response
         :rtype: :class:`flask.Response`
 
         """
         session = self._get_session()
+        create_data = self._get_create_data(data, route_arguments)
         try:
             result = _remove_colander_null(self._get_create_schema(
-                request.json).deserialize(request.json))
+                data, route_arguments).deserialize(create_data))
         except Exception, e:
             session.rollback()
             return self._response(e, 'post', 400)
@@ -644,7 +662,7 @@ class AlchemyViewMixin(FlaskView):
             offset: Integer
 
         :param request_arguments: The request arguments
-        :param route_arguments: Route arguments passed on to :meth:`AlchemyViewMixin:_get_base_query`
+        :param route_arguments: Route arguments passed on to :meth:`AlchemyViewMixin:_base_query`
         """
         route_arguments = route_arguments or {}
         try:
@@ -672,7 +690,7 @@ class AlchemyViewMixin(FlaskView):
                                   400)
         try:
             direction = str(request_arguments.get('direction',
-                                                  self.sort_direction))
+                                             self.sort_direction))
         except:
             return self._response({u'message': _(u'Invalid direction')},
                                   'index',
@@ -683,7 +701,7 @@ class AlchemyViewMixin(FlaskView):
                                   'index',
                                   400)
 
-        query = self._base_query(**route_arguments)
+        query = self._base_query()
 
         # Add sortby
         if sortby and self.sortby_map and sortby in self.sortby_map:
@@ -718,7 +736,7 @@ class AlchemyView(AlchemyViewMixin):
 
         Calls :meth:`AlchemyViewMixin._post`
         """
-        return self._post()
+        return self._post(request.json, {})
 
     def put(self, id):
         """Standard PUT implementation
