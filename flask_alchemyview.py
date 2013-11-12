@@ -139,8 +139,8 @@ class BadRequest(HTTPException):
         :param data: Dict of information about the error
         """
         self.data = (data[u'message']
-                        if u'message' in data
-                        else _(u'Unknown error'))
+                     if u'message' in data
+                     else _(u'Unknown error'))
         self.data = data
 
         self.code = code
@@ -179,8 +179,8 @@ class AlchemyViewMixin(FlaskView):
 
     dict_params = None
     """Will be used instead of
-    :attr:`AlchemyView.asdict_params` and
-    :attr:`AlchemyView.from_params` if they're not set"""
+    :attr:`AlchemyViewMixin.asdict_params` and
+    :attr:`AlchemyViewMixin.from_params` if they're not set"""
 
     asdict_params = None
     """Parameters that will be used when getting an item
@@ -204,10 +204,10 @@ class AlchemyViewMixin(FlaskView):
     """Default sortby column
 
     If not set no sortby will be applied by default in
-    :func:`AlchemyView.index`.
+    :func:`AlchemyViewMixin.index`.
 
     In order for sortby to have any effect it also needs to be set in
-    :attr:`AlchemyView.sortby_map`
+    :attr:`AlchemyViewMixin.sortby_map`
     """
 
     sort_direction = 'asc'
@@ -217,7 +217,7 @@ class AlchemyViewMixin(FlaskView):
     """Map of string=>column for sortby
 
     The values can be anything that will work together with the query returned
-    by :meth:`AlchemyView._base_query`. So if there is a join
+    by :meth:`AlchemyViewMixin._base_query`. So if there is a join
     in the base query that column, or name of that colum can be mapped to a key
     in the sortby_map.
     """
@@ -233,7 +233,7 @@ class AlchemyViewMixin(FlaskView):
     def _json_dumps(self, obj, ensure_ascii=False, **kwargs):
         """Load object from json string
 
-        Uses :attr:`AlchemyView.JSONEncoder` to dump the
+        Uses :attr:`AlchemyViewMixin.JSONEncoder` to dump the
         data.
 
         :param obj: Object that should be dumped
@@ -263,8 +263,8 @@ class AlchemyViewMixin(FlaskView):
     def _bad_html_request(self, code, data=None):
         """Create a :class:`BadRequest`
 
-        If `data` is an Exception :meth:`AlchemyView._exception_to_dict` will
-        be used to convert it to a dict.
+        If `data` is an Exception :meth:`AlchemyViewMixin._exception_to_dict`
+        will be used to convert it to a dict.
 
         :param code: Status code
         :param data: Dict or Exception
@@ -281,7 +281,7 @@ class AlchemyViewMixin(FlaskView):
         """Get a json response
 
         :param obj: Exception OR something that can used by
-            :meth:`AlchemyView._json_dumps`
+            :meth:`AlchemyViewMixin._json_dumps`
             If this is an exception the status will be
             set to 400 if status is less than 400.
         """
@@ -321,9 +321,9 @@ class AlchemyViewMixin(FlaskView):
     def _get_item(self, **kwargs):
         """Get item based on kwargs
 
-        This is used in :meth:`AlchemyView.put` and :meth:`AlchemyView.get`,
-        not in :meth:`AlchemyView.index`. Can handle models with int or string
-        primary key.
+        This is used in :meth:`AlchemyViewMixin.put` and
+        :meth:`AlchemyViewMixin.get`, not in :meth:`AlchemyViewMixin.index`.
+        Can handle models with int or string primary key.
 
         :raises: Exception if the primary key is a composite or not \
                 int or string
@@ -363,12 +363,11 @@ class AlchemyViewMixin(FlaskView):
 
         return item
 
-
     def _get_create_item(self, **kwargs):
         """Get an item that should be used during create
 
-        Default implementation creates a new `AlchemyView.model` instance using
-        kwargs.
+        Default implementation creates a new `AlchemyViewMixin.model` instance
+        using kwargs.
 
         kwargs::
 
@@ -381,8 +380,8 @@ class AlchemyViewMixin(FlaskView):
     def _populate_existing_item(self, item, data, route_arguments):
         """Populate an existing item from request data
 
-        This method is used by :meth:`AlchemyView._put` to populate an item
-        from request data.
+        This method is used by :meth:`AlchemyViewMixin._put` to populate an
+        item from request data.
 
         :param item: The item read from database
         :param data: Request data deserialized through the update schema
@@ -451,7 +450,7 @@ class AlchemyViewMixin(FlaskView):
     def _get_update_schema(self, data, pk):
         """Get colander update schema
 
-        NOTE::
+        **NOTE**
 
         The order of the arguments here `pk` and `data` is will most likely
         change, so use named parameters for this method. The current order is
@@ -488,7 +487,7 @@ class AlchemyViewMixin(FlaskView):
         """Get template name for a specific mimetype
 
         The template name is by default get_route_base()/name.suffix, the
-        suffixes are stored in :attr:`AlchemyView.template_suffixes`.
+        suffixes are stored in :attr:`AlchemyViewMixin.template_suffixes`.
 
         :returns: string
         """
@@ -536,7 +535,13 @@ class AlchemyViewMixin(FlaskView):
                               _('Not a valid Accept-Header')})
 
     def _get(self, **kwargs):
-        """Handles GET requests"""
+        """Handles GET requests
+
+        Reads the item from database by calling `_get_item()` and
+        calls :meth:`dictalchemy.asdict` on that item using
+        :attr:`asditc_params` or :attr:`dict_params` as argument.
+
+        """
         return self._response(self._get_item(**kwargs).
                               asdict(**(getattr(self, 'asdict_params',
                                                 self.dict_params or None)
@@ -561,7 +566,7 @@ class AlchemyViewMixin(FlaskView):
 
         This method will create a model with request data if the data was
         valid. It validates the data with
-        :meth:`AlchemyView._get_create_schema`.
+        :meth:`AlchemyViewMixin._get_create_schema`.
 
         If everything was successfull it will return a 303 redirect to the
         newly created item.
@@ -650,7 +655,6 @@ class AlchemyViewMixin(FlaskView):
         # TODO: What should a delete return?
         return self._response({}, 'delete', 200)
 
-
     def _list(self, request_arguments, route_arguments=None):
         """Returns a list of items
 
@@ -662,7 +666,8 @@ class AlchemyViewMixin(FlaskView):
             offset: Integer
 
         :param request_arguments: The request arguments
-        :param route_arguments: Route arguments passed on to :meth:`AlchemyViewMixin:_base_query`
+        :param route_arguments: Route arguments passed on to \
+                :meth:`AlchemyViewMixinMixin:_base_query`
         """
         route_arguments = route_arguments or {}
         try:
@@ -690,7 +695,7 @@ class AlchemyViewMixin(FlaskView):
                                   400)
         try:
             direction = str(request_arguments.get('direction',
-                                             self.sort_direction))
+                                                  self.sort_direction))
         except:
             return self._response({u'message': _(u'Invalid direction')},
                                   'index',
@@ -722,7 +727,6 @@ class AlchemyViewMixin(FlaskView):
 
 class AlchemyView(AlchemyViewMixin):
     """Standard view that exposes index, get, put, post and delete"""
-
 
     def get(self, id):
         """Standard read item GET implementation
