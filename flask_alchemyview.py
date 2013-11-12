@@ -147,6 +147,66 @@ class BadRequest(HTTPException):
         super(BadRequest, self).__init__(self.data[u'message'])
 
 
+class AbortException(Exception):
+    """An exception that signals that the request should be aborted"""
+
+    def __init__(self, **kwargs):
+        self.arguments = kwargs
+
+
+def get_list_arguments(query,
+                       default_limit=None,
+                       max_limit=None,
+                       default_direction=None
+                       ):
+    """Get list parameters from request argument dict
+
+    :param query: Dict with query arguments
+    :param default_limit: Default page limit if not set
+    :param max_limit: Max value for page limit
+    :param default_direction: Default direction
+
+    :returns: dict with 'limit', 'offset', 'direction' and 'sortby' set
+    """
+
+    try:
+        limit = min(int(query.get('limit', default_limit)),
+                    max_limit)
+    except:
+        raise AbortException(data={u'message': _(u'Invalid limit')},
+                             status=400)
+    if limit > 100:
+        limit = 10
+    try:
+        offset = int(query.get('offset', 0))
+    except:
+        raise AbortException(data={u'message': _(u'Invalid offset')},
+                             status=400)
+    try:
+        sortby = query.get('sortby', None)
+        if sortby:
+            sortby = str(sortby)
+    except:
+        raise AbortException(data={u'message': _(u'Invalid sortby')},
+                             status=400)
+    try:
+        direction = str(query.get('direction', default_direction))
+    except:
+        raise AbortException(data={u'message': _(u'Invalid direction')},
+                             status=400)
+
+    if direction not in ('asc', 'desc'):
+        raise AbortException(data={u'message': _(u'Invalid direction')},
+                             status=400)
+
+    return {
+        'limit': limit,
+        'offset': offset,
+        'sortby': sortby,
+        'direction': direction,
+    }
+
+
 class AlchemyViewMixin(FlaskView):
     """View mixin for SQLAlchemy dictable models together with FlaskView
 
@@ -655,6 +715,17 @@ class AlchemyViewMixin(FlaskView):
         # TODO: What should a delete return?
         return self._response({}, 'delete', 200)
 
+    def _get_list_arguments(self, request_arguments):
+        """Get list params
+
+        See :meth:`get_list_arguments`.
+
+        """
+        return get_list_arguments(query=request_arguments,
+                                  default_limit=self.page_limit,
+                                  max_limit=self.max_page_limit,
+                                  default_direction=self.sort_direction)
+
     def _list(self, request_arguments, route_arguments=None):
         """Returns a list of items
 
@@ -670,58 +741,33 @@ class AlchemyViewMixin(FlaskView):
                 :meth:`AlchemyViewMixinMixin:_base_query`
         """
         route_arguments = route_arguments or {}
-        try:
-            limit = min(int(request_arguments.get('limit', self.page_limit)),
-                        self.max_page_limit)
-        except:
-            return self._response({u'message': _(u'Invalid limit')},
-                                  'index',
-                                  400)
-        if limit > 100:
-            limit = 10
-        try:
-            offset = int(request_arguments.get('offset', 0))
-        except:
-            return self._response({u'message': _(u'Invalid offset')},
-                                  'index',
-                                  400)
-        try:
-            sortby = request_arguments.get('sortby', None)
-            if sortby:
-                sortby = str(sortby)
-        except:
-            return self._response({u'message': _(u'Invalid sortby')},
-                                  'index',
-                                  400)
-        try:
-            direction = str(request_arguments.get('direction',
-                                                  self.sort_direction))
-        except:
-            return self._response({u'message': _(u'Invalid direction')},
-                                  'index',
-                                  400)
 
-        if direction not in ('asc', 'desc'):
-            return self._response({u'message': _(u'Invalid direction')},
-                                  'index',
-                                  400)
+        try:
+            list_arguments = self._get_list_arguments(request_arguments)
+        except AbortException, e:
+            return self._response(data=e.arguments['data'],
+                                  template='index',
+                                  status=e.arguments['status'])
 
         query = self._base_query()
 
         # Add sortby
+        sortby = list_arguments['sortby']
         if sortby and self.sortby_map and sortby in self.sortby_map:
             query = query.order_by(getattr(self.sortby_map[sortby],
-                                           direction)())
+                                           list_arguments['direction'])())
 
         return self._response({
             'items': [p.asdict(**(getattr(self,
                                           'asdict_params',
                                           self.dict_params or None) or {}))
                       for p in
-                      query.limit(limit).offset(offset).all()],
+                      query.limit(
+                          list_arguments['limit']).offset(
+                              list_arguments['offset']).all()],
             'count': query.count(),
-            'limit': limit,
-            'offset': offset},
+            'limit': list_arguments['limit'],
+            'offset': list_arguments['offset']},
             'index')
 
 
