@@ -599,7 +599,7 @@ class AlchemyViewMixin(FlaskView):
 
         Reads the item from database by calling `_get_item()` and
         calls :meth:`dictalchemy.asdict` on that item using
-        :attr:`asditc_params` or :attr:`dict_params` as argument.
+        :attr:`asdict_params` or :attr:`dict_params` as argument.
 
         """
         return self._response(self._get_item(**kwargs).
