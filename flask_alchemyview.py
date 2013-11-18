@@ -423,6 +423,19 @@ class AlchemyViewMixin(FlaskView):
 
         return item
 
+    def _item_asdict(self, item):
+        """Convert item to dict that will be used in a response
+
+        Calls item.asdict with `asdict_params` or `dict_params` as parameters.
+
+        :param item: The database item
+
+        :returns: Dict
+        """
+        return item.asdict(**(getattr(self, 'asdict_params',
+                                      self.dict_params or None)
+                              or {}))
+
     def _get_create_item(self, **kwargs):
         """Get an item that should be used during create
 
@@ -598,14 +611,11 @@ class AlchemyViewMixin(FlaskView):
         """Handles GET requests
 
         Reads the item from database by calling `_get_item()` and
-        calls :meth:`dictalchemy.asdict` on that item using
-        :attr:`asdict_params` or :attr:`dict_params` as argument.
+        calls :meth:`AlchemyViewMixin._item_asdict` on that item.
 
         """
-        return self._response(self._get_item(**kwargs).
-                              asdict(**(getattr(self, 'asdict_params',
-                                                self.dict_params or None)
-                                        or {})), 'get')
+        return self._response(self._item_asdict(self._get_item(**kwargs)),
+                              'get')
 
     def _get_create_data(self, request_arguments, route_arguments):
         """Get create data based on request_arguments and route_arguments
@@ -758,9 +768,7 @@ class AlchemyViewMixin(FlaskView):
                                            list_arguments['direction'])())
 
         return self._response({
-            'items': [p.asdict(**(getattr(self,
-                                          'asdict_params',
-                                          self.dict_params or None) or {}))
+            'items': [self._item_asdict(p)
                       for p in
                       query.limit(
                           list_arguments['limit']).offset(
