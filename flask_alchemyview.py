@@ -481,7 +481,7 @@ class AlchemyView(FlaskView):
             else:
                 try:
                     session.commit()
-                except:
+                except Exception, e:
                     return self._response(e, 'post', 500)
                 return redirect(self._item_url(item), 303)
 
